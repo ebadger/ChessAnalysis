@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Badger-Flores Chess Coach",
+  "short_name": "Badger-Flores",
+  "description": "A private, offline-capable chess study companion with a local Stockfish engine.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f7f3",
+  "theme_color": "#f8f7f3",
+  "icons": [
+    {
+      "src": "./flower.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
