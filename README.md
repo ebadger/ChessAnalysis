@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. A real review of Morphy's Opera Game starts automatically; **Import a game** accepts pasted PGN or a local `.pgn` file.
+Open the local URL printed by Vite. A real review of Morphy's Opera Game starts automatically. Choose **Play a bot** for a practice game; **Import a game** still accepts pasted Chess.com/Lichess PGN or a local `.pgn` file from either activity.
 
 ```sh
 npm run build
@@ -49,6 +49,7 @@ Offline storage requires HTTPS or localhost and service-worker support. The cach
 ## The study experience
 
 - An original animated Badger-Flores coach, honoring the family name with a badger, a daisy, a lilac scarf, and a little garden. The SVG artwork is created for this project; reduced-motion preferences are respected.
+- Five leveled local bots, playable as White, Black, or a randomly assigned color. Phone-friendly tap-to-move controls show legal destinations, with explicit queen/rook/bishop/knight promotion choices. Take back a turn, resign, save the PGN, or send a completed/in-progress game straight to analysis.
 - Legal PGN replay, custom starting FENs, Black-to-move starts, castling, promotion, en passant, mate, and drawn positions. Annotations and variations are accepted; the PGN's **main line** is reviewed.
 - Real Stockfish analysis in a Web Worker. Quick review searches up to depth 12 / 400 ms per position; Deep review up to depth 18 / 1,400 ms per position. The first limit reached ends each search. Completed depth is shown; up to three candidates are retained.
 - Familiar move labels: Brilliant, Great, Best, Excellent, Good, Book, Inaccuracy, Mistake, Blunder, and Miss.
@@ -70,6 +71,24 @@ Offline storage requires HTTPS or localhost and service-worker support. The cach
 | Review another game | Import a game |
 
 Keyboard shortcuts are suspended while editing PGN or using a dialog. The move journal, timeline slider, alternatives, and board controls are keyboard accessible.
+
+## Play a bot
+
+The **Play a bot** tab offers five Stockfish-powered companions. These are relative practice levels, **not calibrated Elo ratings**. Both UCI `Skill Level` and the search budget change; moves are validated by chess.js before they reach the board.
+
+| Companion | Practice level | Stockfish skill | Maximum depth | Search time cap |
+| --- | --- | --- | --- | --- |
+| Sprout | Beginner | 0 | 3 | 120 ms |
+| Clover | Casual | 3 | 6 | 220 ms |
+| Fern | Club | 8 | 10 | 400 ms |
+| Iris | Advanced | 14 | 14 | 750 ms |
+| Oak | Expert | 20 | 18 | 1,400 ms |
+
+There is no chess clock. Tap a piece and then a highlighted destination; on a keyboard, focus the board, use arrow keys to navigate squares, and Enter/Space to select. Escape cancels a selection. Castling, en passant, all four promotions, checkmate, and draw detection use the same legal-move model as imported games. Practice games automatically finish on stalemate, insufficient material, threefold repetition, or the fifty-move rule.
+
+**Take back** returns to the position before your last move, removing the bot's reply too if it has already played. It also cancels an in-flight bot response. When playing Black, the bot's opening move is preserved. Changing companion/color starts a new match only after pressing **Start game** in the new-game dialog.
+
+**Analyze this game** (or **Analyze the game so far**) imports the generated PGN into the existing review experience. Review always uses full engine skill, independently of the bot setting. Switching activities preserves the current match and completed review work in memory, pauses background searches, and resumes unfinished work when appropriate. Manual review stops stay paused. Neither bot games nor imported games are uploaded or saved in browser storage; use **Save game PGN** before refreshing/closing the page. All bot levels also work offline after the app files have been cached.
 
 ## How the coaching works
 
@@ -101,7 +120,7 @@ npm run build
 npm run test:browser
 ```
 
-If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, mobile layout, and full reload plus fresh-game analysis with the browser completely offline. Unit tests cover parsing, special moves, score normalization, grading boundaries, and tactical patterns.
+If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, mobile layout, every bot level, takebacks, color choice, bot-game-to-review transfer, and fresh offline play/analysis after a full reload. Unit tests cover parsing, special moves and promotions, match outcomes, bot search settings and cancellation, score normalization, grading boundaries, and tactical patterns.
 
 ## Engine licensing and references
 

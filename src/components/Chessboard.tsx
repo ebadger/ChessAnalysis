@@ -1,4 +1,5 @@
-import { useId, useMemo } from 'react'
+import { useId, useMemo, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { Chess, SQUARES } from 'chess.js'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { colorName, formatEvaluation, PIECE_NAMES } from '../chess/game'
@@ -64,7 +65,7 @@ function squarePoint(square: Square, flipped: boolean) {
 }
 
 export function Chessboard({
-  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation,
+  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation, showEvaluation = true, interaction,
 }: {
   fen: string
   flipped: boolean
@@ -72,11 +73,19 @@ export function Chessboard({
   arrows?: BoardArrow[]
   highlighted?: Square[]
   evaluation?: Evaluation
+  showEvaluation?: boolean
+  interaction?: {
+    enabled: boolean
+    selected: Square | null
+    destinations: Square[]
+    onSelect: (square: Square) => void
+  }
 }) {
   const chess = useMemo(() => new Chess(fen), [fen])
   const markerId = useId().replace(/:/g, '')
   const files = flipped ? 'hgfedcba' : 'abcdefgh'
   const ranks = flipped ? '12345678' : '87654321'
+  const [focusSquare, setFocusSquare] = useState<Square>(flipped ? 'e7' : 'e2')
   const inCheck = chess.isCheck()
   const whiteShare = evaluation ? Math.min(96, Math.max(4, 50 + 46 * Math.tanh(evaluation.cp / 600))) : 50
   const description = SQUARES.flatMap((square) => {
@@ -84,27 +93,56 @@ export function Chessboard({
     return piece ? [`${colorName(piece.color)} ${PIECE_NAMES[piece.type]} on ${square}`] : []
   }).join(', ')
 
+  const navigateSquare = (event: KeyboardEvent<HTMLButtonElement>, row: number, col: number) => {
+    let nextRow = row
+    let nextCol = col
+    if (event.key === 'ArrowUp') nextRow--
+    else if (event.key === 'ArrowDown') nextRow++
+    else if (event.key === 'ArrowLeft') nextCol--
+    else if (event.key === 'ArrowRight') nextCol++
+    else if (event.key === 'Home') nextCol = 0
+    else if (event.key === 'End') nextCol = 7
+    else if (event.key === 'Escape' && interaction?.selected) {
+      event.stopPropagation()
+      interaction.onSelect(interaction.selected)
+      return
+    } else return
+    event.preventDefault()
+    event.stopPropagation()
+    const next = `${files[Math.max(0, Math.min(7, nextCol))]}${ranks[Math.max(0, Math.min(7, nextRow))]}` as Square
+    setFocusSquare(next)
+    event.currentTarget.closest('.chessboard')?.querySelector<HTMLButtonElement>(`button[data-square="${next}"]`)?.focus()
+  }
+
   return (
-    <div className="board-with-eval">
-      <div className={`evaluation-bar${flipped ? ' eval-flipped' : ''}`} title="White's evaluation. The bar is an advantage indicator, not a win probability." aria-label={`Evaluation: ${formatEvaluation(evaluation)}, from White's perspective`}>
+    <div className={`board-with-eval${showEvaluation ? '' : ' board-no-eval'}`}>
+      {showEvaluation && <div className={`evaluation-bar${flipped ? ' eval-flipped' : ''}`} title="White's evaluation. The bar is an advantage indicator, not a win probability." aria-label={`Evaluation: ${formatEvaluation(evaluation)}, from White's perspective`}>
         <div className="eval-white" style={{ height: `${whiteShare}%` }} />
         <span className={`eval-number${evaluation && evaluation.cp < 0 ? ' eval-negative' : ''}`}>{formatEvaluation(evaluation)}</span>
-      </div>
-      <div className="chessboard" role="img" aria-label={`Chessboard. ${colorName(chess.turn())} to move. ${flipped ? 'Black' : 'White'} at the bottom. ${description}`} data-fen={fen}>
-        {[...ranks].flatMap((rank, row) => [...files].map((file, col) => {
+      </div>}
+      <div className="chessboard" role={interaction ? 'grid' : 'img'} aria-label={`Chessboard. ${colorName(chess.turn())} to move. ${flipped ? 'Black' : 'White'} at the bottom.${interaction ? ' Select a piece, then a highlighted destination. Arrow keys navigate squares; Enter selects.' : ` ${description}`}`} data-fen={fen}>
+        {[...ranks].map((rank, row) => <div className="board-rank" key={rank} role={interaction ? 'row' : undefined}>{[...files].map((file, col) => {
           const square = `${file}${rank}` as Square
           const piece = chess.get(square)
           const dark = ((file.charCodeAt(0) - 97) + Number(rank)) % 2 === 0
           const last = lastMove?.from === square || lastMove?.to === square
           const checked = inCheck && piece?.type === 'k' && piece.color === chess.turn()
-          return (
-            <div key={square} data-square={square} className={`board-square ${dark ? 'square-dark' : 'square-light'}${last ? ' square-last' : ''}${highlighted.includes(square) ? ' square-tactic' : ''}${checked ? ' square-check' : ''}`}>
+          const selected = interaction?.selected === square
+          const legal = interaction?.destinations.includes(square)
+          const className = `board-square ${dark ? 'square-dark' : 'square-light'}${last ? ' square-last' : ''}${highlighted.includes(square) ? ' square-tactic' : ''}${checked ? ' square-check' : ''}${selected ? ' square-selected' : ''}`
+          const contents = <>
               {piece && <ChessPiece type={piece.type} color={piece.color} />}
+              {legal && <span className={piece ? 'legal-capture' : 'legal-dot'} />}
               {col === 0 && <span className="coordinate coordinate-rank">{rank}</span>}
               {row === 7 && <span className="coordinate coordinate-file">{file}</span>}
-            </div>
-          )
-        }))}
+          </>
+          return interaction ? <button
+            key={square} type="button" data-square={square} className={className} role="gridcell"
+            aria-label={`${square}, ${piece ? `${colorName(piece.color)} ${PIECE_NAMES[piece.type]}` : 'empty'}${legal ? ', legal destination' : ''}`}
+            aria-selected={selected} disabled={!interaction.enabled} tabIndex={focusSquare === square ? 0 : -1}
+            onFocus={() => setFocusSquare(square)} onKeyDown={(event) => navigateSquare(event, row, col)} onClick={() => interaction.onSelect(square)}
+          >{contents}</button> : <div key={square} data-square={square} className={className}>{contents}</div>
+        })}</div>)}
         <svg className="board-arrows" viewBox="0 0 800 800" aria-hidden="true">
           <defs>
             {(['sage', 'rose', 'gold'] as const).map((tone) =>

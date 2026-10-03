@@ -141,6 +141,18 @@ export function formatEvaluation(evaluation: Evaluation | null | undefined): str
   return `${pawns > 0 ? '+' : ''}${pawns.toFixed(1)}`
 }
 
+export function downloadPgn(pgn: string, filename: string): void {
+  const url = URL.createObjectURL(new Blob([pgn], { type: 'application/x-chess-pgn;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.hidden = true
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 export function describeEvaluation(evaluation: Evaluation): string {
   if (evaluation.mate !== null) {
     const winner = evaluation.cp > 0 ? 'White' : 'Black'

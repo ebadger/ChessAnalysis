@@ -3,7 +3,15 @@ import { analyzeMove } from '../chess/analysis'
 import { StockfishClient } from '../chess/engine'
 import type { AnalysisMode, AnalysisStatus, MoveAnalysis, ParsedGame, PositionAnalysis } from '../chess/types'
 
-export function useAnalysis(game: ParsedGame, mode: AnalysisMode) {
+interface ReviewCache {
+  game: ParsedGame
+  mode: AnalysisMode
+  results: MoveAnalysis[]
+  positions: PositionAnalysis[]
+  paused: boolean
+}
+
+export function useAnalysis(game: ParsedGame, mode: AnalysisMode, enabled = true) {
   const [status, setStatus] = useState<AnalysisStatus>('idle')
   const [analyses, setAnalyses] = useState<MoveAnalysis[]>([])
   const [positions, setPositions] = useState<PositionAnalysis[]>([])
@@ -11,30 +19,40 @@ export function useAnalysis(game: ParsedGame, mode: AnalysisMode) {
   const [reviewSource, setReviewSource] = useState({ game, mode })
   const engineRef = useRef<StockfishClient | null>(null)
   const generationRef = useRef(0)
+  const cacheRef = useRef<ReviewCache | null>(null)
 
-  const start = useCallback(async () => {
+  const run = useCallback(async (reset: boolean) => {
     const generation = ++generationRef.current
     engineRef.current?.dispose()
+    engineRef.current = null
+    const previous = cacheRef.current
+    const cache: ReviewCache = !reset && previous?.game === game && previous.mode === mode
+      ? previous
+      : { game, mode, results: [], positions: [], paused: false }
+    cacheRef.current = cache
+    setReviewSource({ game, mode })
+    setAnalyses([...cache.results])
+    setPositions([...cache.positions])
+    if (cache.paused) { setStatus('stopped'); return }
+    if (cache.results.length === game.moves.length) { setStatus('complete'); return }
     const engine = new StockfishClient()
     engineRef.current = engine
-    setReviewSource({ game, mode })
     setStatus('loading')
     setError(null)
-    setAnalyses([])
-    setPositions([])
     try {
       await engine.initialize()
       if (generation !== generationRef.current) return
       setStatus('analyzing')
-      const results: MoveAnalysis[] = []
-      const evaluated: PositionAnalysis[] = []
-      for (let index = 0; index < game.positions.length; index++) {
+      const results = cache.results
+      const evaluated = cache.positions
+      for (let index = evaluated.length; index < game.positions.length; index++) {
         const position = await engine.evaluate(game, index, mode)
         if (generation !== generationRef.current) return
+        const result = index > 0 ? analyzeMove(game, index - 1, evaluated[index - 1], position, results[index - 2]) : null
         evaluated.push(position)
         setPositions([...evaluated])
-        if (index > 0) {
-          results.push(analyzeMove(game, index - 1, evaluated[index - 1], position, results[index - 2]))
+        if (result) {
+          results.push(result)
           setAnalyses([...results])
         }
       }
@@ -54,17 +72,19 @@ export function useAnalysis(game: ParsedGame, mode: AnalysisMode) {
     engineRef.current?.dispose()
     engineRef.current = null
     setStatus('stopped')
+    if (cacheRef.current) cacheRef.current.paused = true
   }, [])
 
   useEffect(() => {
-    void start()
+    if (enabled) void run(false)
     return () => {
       generationRef.current++
       engineRef.current?.dispose()
       engineRef.current = null
     }
-  }, [start])
+  }, [run, enabled])
 
+  const start = useCallback(() => run(true), [run])
   const current = reviewSource.game === game && reviewSource.mode === mode
   return {
     status: current ? status : 'loading',

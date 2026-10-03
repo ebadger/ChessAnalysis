@@ -55,7 +55,10 @@ export class StockfishClient {
   private rejectPending: ((reason: Error) => void) | null = null
   private disposed = false
 
-  async initialize(): Promise<void> {
+  async initialize({ skillLevel = 20, multiPv = 3 }: { skillLevel?: number; multiPv?: 1 | 3 } = {}): Promise<void> {
+    if (!Number.isInteger(skillLevel) || skillLevel < 0 || skillLevel > 20) {
+      throw new Error('The bot skill level must be an integer from 0 to 20.')
+    }
     if (typeof Worker === 'undefined' || typeof WebAssembly === 'undefined') {
       throw new Error('Local analysis needs WebAssembly and Web Workers. Please use a current version of Chrome, Edge, Firefox, or Safari.')
     }
@@ -73,7 +76,9 @@ export class StockfishClient {
     await this.exchange([
       'setoption name Threads value 1',
       'setoption name Hash value 32',
-      'setoption name MultiPV value 3',
+      `setoption name MultiPV value ${multiPv}`,
+      `setoption name Skill Level value ${skillLevel}`,
+      'setoption name UCI_LimitStrength value false',
       'ucinewgame',
       'isready',
     ], (line) => line === 'readyok', 10000)
@@ -92,7 +97,7 @@ export class StockfishClient {
         cleanup()
         this.worker?.terminate()
         this.disposed = true
-        reject(new Error('The local engine took too long to respond. Retry Quick review, or use a browser with WebAssembly enabled.'))
+        reject(new Error('The local engine took too long to respond. Retry with a shorter review or a gentler bot, using a browser with WebAssembly enabled.'))
       }, timeout)
       this.rejectPending = (error) => {
         cleanup()
@@ -134,6 +139,24 @@ export class StockfishClient {
       throw new Error('Stockfish returned no usable continuation for this position. Please retry the analysis.')
     }
     return { fen: position.fen, evaluation: lines[0].score, depth: lines[0].depth, lines, terminal: false }
+  }
+
+  async chooseMove(chess: Chess, limits: { depth: number; milliseconds: number }): Promise<string> {
+    if (chess.isGameOver()) throw new Error('The bot cannot move after the game has ended.')
+    const history = chess.history({ verbose: true })
+    const initialFen = history[0]?.before ?? chess.fen()
+    const playedMoves = history.map((move) => move.lan).join(' ')
+    let bestMove: string | undefined
+    await this.exchange([
+      `position fen ${initialFen}${playedMoves ? ` moves ${playedMoves}` : ''}`,
+      `go depth ${limits.depth} movetime ${limits.milliseconds}`,
+    ], (line) => line.startsWith('bestmove '), limits.milliseconds + 15000, (message) => {
+      if (message.startsWith('bestmove ')) bestMove = message.split(/\s+/)[1]
+    })
+    if (!bestMove || bestMove === '(none)' || bestMove === '0000') {
+      throw new Error('The bot did not return a move. Retry the bot to continue your game.')
+    }
+    return playUci(new Chess(chess.fen()), bestMove).lan
   }
 
   dispose(): void {

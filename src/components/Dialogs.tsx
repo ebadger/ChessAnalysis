@@ -5,7 +5,7 @@ import { DEMO_PGN, FORK_PGN, parseGame } from '../chess/game'
 import type { Classification, ParsedGame } from '../chess/types'
 import { GradeBadge } from './MoveList'
 
-function useDialog(open: boolean, onClose: () => void) {
+export function useDialog(open: boolean, onClose: () => void) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     if (open && !ref.current?.open) ref.current?.showModal()
@@ -73,6 +73,11 @@ export function GuideDialog({ open, onClose }: { open: boolean; onClose: () => v
         <h3>Explore, don't just memorize</h3>
         <p>Choose any move in the journal. Use the board controls or left/right arrow keys to step through the game. The key-moment buttons jump to critical moves. Click a suggested alternative to rewind to the position <em>before</em> the played move, then play through both sides of that possible future. "Back to game" returns to the original position.</p>
         <p>Green arrows show the next move in an alternative; rose arrows show the next move in the opponent's response; gold arrows show a tactical pattern. No alternative arrow is drawn on an unrelated position.</p>
+        <h3>Play a little, then learn a little</h3>
+        <p>Choose <strong>Play a bot</strong> to meet Sprout (Beginner), Clover (Casual), Fern (Club), Iris (Advanced), or Oak (Expert). Each uses a different local Stockfish skill and search budget. These are practice levels, not official Elo ratings. Choose White, Black, or a surprise color; there is no clock.</p>
+        <p>On a phone, tap a piece and then a highlighted square. Castling works by moving the king to its castling square. When a pawn reaches the last rank, choose its new piece. With a keyboard, arrow keys navigate the playing board and Enter/Space selects a piece or destination.</p>
+        <p><strong>Take back</strong> returns to your last decision and removes the bot's response, even if it is still thinking. <strong>Analyze this game</strong> sends the result to a full-strength review; you can also analyze a game in progress. Switching activities keeps the bot match and previous review in memory and pauses the inactive engine. Chess.com PGN import remains available at the top of the page.</p>
+        <p>Bot games are not stored automatically. Save the game PGN before refreshing or closing the page. Practice games finish automatically on checkmate, resignation, stalemate, insufficient material, threefold repetition, or the fifty-move rule.</p>
         <h3>Familiar labels. Independent estimates.</h3>
         <p>These categories are inspired by Chess.com's public definitions, not its proprietary Game Review algorithm. Stockfish evaluates each position; we compare before/after expected scores using a fixed centipawn curve. We do not adjust for player rating. "Great," "Brilliant," and "Miss" use conservative, documented heuristics. Opening recognition uses a small exact-match repertoire, not an exhaustive database.</p>
         <div className="grade-guide">{Object.entries(CLASSIFICATIONS).map(([key, value]) => <div key={key}><GradeBadge kind={key as Classification} /><span><strong>{value.label}</strong><p>{value.description}</p></span></div>)}</div>

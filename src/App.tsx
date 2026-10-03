@@ -3,12 +3,12 @@ import {
   ArrowLeft, ArrowUpRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, CircleHelp, CloudOff, Download, Flower2, Focus, GitBranch,
   Leaf, LoaderCircle, LockKeyhole, Pause, Play, RotateCcw, RotateCw, ShieldCheck,
-  SkipBack, SkipForward, Sprout, Upload, X,
+  SkipBack, SkipForward, Sprout, Swords, Upload, X,
 } from 'lucide-react'
 import type { Color } from 'chess.js'
 import { Chess } from 'chess.js'
 import { CLASSIFICATIONS, describeMoveIdea, studyAccuracy } from './chess/analysis'
-import { colorName, DEMO_PGN, exportAnnotatedPgn, formatEvaluation, materialBalance, moveLabel, parseGame, replayLine } from './chess/game'
+import { colorName, DEMO_PGN, downloadPgn, exportAnnotatedPgn, formatEvaluation, materialBalance, moveLabel, parseGame, replayLine } from './chess/game'
 import { detectTactics } from './chess/tactics'
 import type { AnalysisMode, BoardArrow, EngineLine, ParsedGame, Tactic, Variation } from './chess/types'
 import { Badger } from './components/Badger'
@@ -17,12 +17,15 @@ import { Coach } from './components/Coach'
 import { GuideDialog, ImportDialog } from './components/Dialogs'
 import { EvaluationGraph } from './components/EvaluationGraph'
 import { GradeBadge, MoveList } from './components/MoveList'
+import { PlayGame } from './components/PlayGame'
 import { useAnalysis } from './hooks/useAnalysis'
+import { useBotGame } from './hooks/useBotGame'
 import { useOffline } from './hooks/useOffline'
 
 const exampleGame = parseGame(DEMO_PGN)
 
 function App() {
+  const [view, setView] = useState<'review' | 'play'>('review')
   const [game, setGame] = useState(exampleGame)
   const [mode, setMode] = useState<AnalysisMode>('quick')
   const [selectedPly, setSelectedPly] = useState(18)
@@ -36,7 +39,8 @@ function App() {
   const [onlyCritical, setOnlyCritical] = useState(false)
   const [journalTab, setJournalTab] = useState<'moves' | 'insights'>('moves')
   const [notice, setNotice] = useState<string | null>(null)
-  const { status, analyses, positions, error, start, stop } = useAnalysis(game, mode)
+  const { status, analyses, positions, error, start, stop } = useAnalysis(game, mode, view === 'review')
+  const botGame = useBotGame(view === 'play')
   const offline = useOffline()
   const pending = status === 'loading' || status === 'analyzing'
   const move = game.moves[selectedPly - 1]
@@ -117,7 +121,7 @@ function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target
-      if (importOpen || guideOpen || event.ctrlKey || event.altKey || event.metaKey ||
+      if (view !== 'review' || importOpen || guideOpen || event.ctrlKey || event.altKey || event.metaKey ||
           (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select')))) return
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault()
@@ -135,7 +139,7 @@ function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [importOpen, guideOpen, jump, leaveVariation, nextCritical, previousCritical, selectMove, step])
+  }, [view, importOpen, guideOpen, jump, leaveVariation, nextCritical, previousCritical, selectMove, step])
 
   useEffect(() => {
     if (!notice) return
@@ -148,16 +152,11 @@ function App() {
     selectMove(1)
     setOnlyCritical(false)
     setJournalTab('moves')
+    setView('review')
   }
 
   const exportGame = () => {
-    const blob = new Blob([exportAnnotatedPgn(game, analyses)], { type: 'application/x-chess-pgn;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'badger-flores-study.pgn'
-    link.click()
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    downloadPgn(exportAnnotatedPgn(game, analyses), 'badger-flores-study.pgn')
     setNotice('Your annotated PGN is ready to keep and revisit.')
   }
 
@@ -183,9 +182,9 @@ function App() {
 
   return (
     <>
-      <a className="skip-link" href="#study-board">Skip to the chessboard</a>
+      <a className="skip-link" href={view === 'review' ? '#study-board' : '#play-board'}>Skip to the chessboard</a>
       <header className="site-header">
-        <a className="brand" href="./" aria-label="Badger-Flores home">
+        <a className="brand" href="./" aria-label="Badger-Flores home" onClick={(event) => { event.preventDefault(); setPlaying(false); setView('review') }}>
           <span className="brand-character"><Badger small /></span>
           <span><strong>Badger<span className="brand-hyphen">-</span>Flores<Flower2 size={18} /></strong><small>A little better, every move.</small></span>
         </a>
@@ -196,7 +195,16 @@ function App() {
         </nav>
       </header>
 
-      <main className="page-shell">
+      <main className={`page-shell page-${view}`}>
+        <div className="workspace-mode-bar">
+          <div className="workspace-modes" role="tablist" aria-label="Choose a chess activity">
+            <button id="review-tab" role="tab" aria-controls="review-panel" aria-selected={view === 'review'} onClick={() => { setPlaying(false); setView('review') }}><BookOpen size={16} /> Review a game</button>
+            <button id="play-tab" role="tab" aria-controls="play-panel" aria-selected={view === 'play'} onClick={() => { setPlaying(false); setView('play') }}><Swords size={16} /> Play a bot{botGame.match && !botGame.finished && <i title="Your game is waiting" />}</button>
+          </div>
+          <span><Sprout size={13} /> Play a little. Learn a little. Grow a little.</span>
+        </div>
+        {offline.status === 'error' && <div className="offline-warning" role="alert"><CloudOff size={18} /><span>Offline saving needs attention: {offline.message} You can still review games while this site is available.</span><button className="text-button" onClick={offline.retry}>Retry offline saving <RotateCw size={14} /></button></div>}
+        {view === 'review' ? <section id="review-panel" role="tabpanel" aria-labelledby="review-tab">
         <div className="page-heading">
           <div><div className="breadcrumb"><Sprout size={14} /> Your study space <ChevronRight size={12} /><span>Game review</span></div><h1>Good games teach. <span>Every game can.</span></h1><p>Slow down, follow an idea, and discover your next little breakthrough.</p></div>
           <div className="game-heading-actions"><span className="example-label"><Leaf size={13} /> {game === exampleGame ? 'A CLASSIC TO LEARN FROM' : 'YOUR NEXT CHAPTER'}</span><button className="secondary-button export-button" disabled={analyses.length === 0} onClick={exportGame}><Download size={15} /> Export study</button></div>
@@ -215,7 +223,6 @@ function App() {
           <div className="analysis-progress" role="progressbar" aria-label="Game analysis progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><div style={{ width: `${progress}%` }} /></div>
         </div>
         {error && <div className="engine-error" role="alert"><CircleHelp size={20} /><span>{error} The board and PGN navigation still work.</span><button className="text-button" onClick={() => { void start() }}>Retry analysis <RotateCw size={14} /></button></div>}
-        {offline.status === 'error' && <div className="offline-warning" role="alert"><CloudOff size={18} /><span>Offline saving needs attention: {offline.message} You can still review games while this site is available.</span><button className="text-button" onClick={offline.retry}>Retry offline saving <RotateCw size={14} /></button></div>}
 
         <div className="study-workspace">
           <MoveList game={game} analyses={analyses} selectedPly={selectedPly} onSelect={selectMove} onlyCritical={onlyCritical} onToggleCritical={() => setOnlyCritical((value) => !value)} tab={journalTab} onTabChange={setJournalTab} />
@@ -265,13 +272,18 @@ function App() {
 
           <Coach analysis={analysis} move={move} pending={pending} onExplore={explore} onReply={exploreReply} onTactic={showTactic} activeTactic={activeTactic} />
         </div>
+        </section> : <section id="play-panel" role="tabpanel" aria-labelledby="play-tab">
+          <div className={`play-page-heading${botGame.match ? ' play-heading-active' : ''}`}><h1>Your next chapter <span>starts on the board.</span></h1><p>A garden of local bots, from gentle beginnings to a serious challenge.</p></div>
+          <PlayGame game={botGame} onAnalyze={importGame} onNotice={setNotice} />
+          <div className={`offline-status offline-${offline.status}`} role="status"><CloudOff size={12} /><span>{offline.message}</span></div>
+        </section>}
 
         <footer className="site-footer"><span><Flower2 size={15} /> Made for curious minds and growing games.</span><button className="text-button" onClick={() => setGuideOpen(true)}>About the coach & analysis <ArrowUpRight size={13} /></button></footer>
       </main>
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importGame} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
       {notice && <div className="toast" role="status"><Download size={16} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={15} /></button></div>}
-      <span className="sr-only" role="status">{status === 'complete' ? `Analysis complete. ${criticalPlies.length} key moments found.` : ''}</span>
+      <span className="sr-only" role="status">{view === 'review' && status === 'complete' ? `Analysis complete. ${criticalPlies.length} key moments found.` : ''}</span>
     </>
   )
 }
