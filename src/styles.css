@@ -17,6 +17,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; font-size: 13px; }
+.app-shell { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 button, a, input, select, textarea, summary { -webkit-tap-highlight-color: transparent; }
@@ -242,6 +243,7 @@ button.board-square:focus-visible { outline: 3px solid #775287; outline-offset: 
 .critical-controls > .icon-button { width: 25px; }
 .next-critical-button { display: flex; align-items: center; gap: 8px; padding: 8px 7px; font-size: 11px; color: #866098; border-radius: 5px; white-space: nowrap; }
 .next-critical-button:hover:not(:disabled) { background: #efe7f4; }
+.critical-label-short { display: none; }
 .board-underbar { margin: 3px 0 14px 24px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .board-underbar > span { display: flex; align-items: center; gap: 3px; font-size: 9px; color: #94819e; }
 .keycap { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 14px; background: #f1edef; border: 1px solid #e7e1e9; border-radius: 3px; font-size: 10px; color: #a696af; }
@@ -347,7 +349,7 @@ button.board-square:focus-visible { outline: 3px solid #775287; outline-offset: 
 .site-footer > span > svg { color: #b29bbe; }
 .site-footer .text-button { font-size: 10px; color: #9477a2; }
 
-.app-dialog { max-width: 620px; width: calc(100% - 36px); padding: 26px 30px; border: 1px solid #e0d5e7; border-radius: 17px; background: #fffdfb; color: var(--ink); max-height: 90vh; box-shadow: 0 24px 100px #30213730; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #d9c8e2 transparent; }
+.app-dialog { max-width: 620px; width: calc(100% - 36px); padding: 26px 30px; border: 1px solid #e0d5e7; border-radius: 17px; background: #fffdfb; color: var(--ink); max-height: 90dvh; box-shadow: 0 24px 100px #30213730; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #d9c8e2 transparent; }
 .app-dialog::backdrop { background: #30283c66; backdrop-filter: blur(4px); }
 body:has(dialog[open]) { overflow: hidden; }
 .dialog-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -725,4 +727,161 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+body:has(.phone-review-app) { overflow: hidden; }
+.phone-review-app {
+  --phone-board-size: max(120px, min(calc(100vw - 40px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 370px - env(safe-area-inset-top) - env(safe-area-inset-bottom))));
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.phone-review-app .site-header { flex: 0 0 44px; height: 44px; padding: 0 10px; gap: 5px; }
+.phone-review-app .brand { gap: 2px; }
+.phone-review-app .brand strong { font-size: 18px; letter-spacing: -.5px; }
+.phone-review-app .brand small, .phone-review-app .brand strong > svg { display: none; }
+.phone-review-app .brand-character { width: 31px; height: 33px; }
+.phone-review-app .brand-character .badger-art { width: 44px; height: 36px; transform: translate(-6px, -2px); }
+.phone-review-app .header-actions { gap: 4px; }
+.phone-review-app .privacy-label { display: none; }
+.phone-review-app .header-guide { display: flex; justify-content: center; width: 28px; height: 30px; order: 2; padding: 0; border-radius: 6px; }
+.phone-review-app .header-guide > span { display: none; }
+.phone-review-app .import-button { min-height: 30px; padding: 6px 8px; font-size: 10px; gap: 5px; }
+.phone-review-app .page-shell { display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%; max-width: none; margin: 0; padding: 0 10px 8px; }
+.phone-review-app .workspace-mode-bar { flex: 0 0 40px; display: flex; height: 40px; margin: 0; padding: 4px 0; }
+.phone-review-app .workspace-mode-bar > span { display: none; }
+.phone-review-app .workspace-modes { width: 100%; height: 32px; padding: 2px; border-radius: 7px; }
+.phone-review-app .workspace-modes button { flex: 1; min-height: 26px; height: 26px; padding: 2px 8px; font-size: 11px; gap: 6px; border-radius: 5px; }
+.phone-review-app .workspace-modes button > svg { width: 14px; height: 14px; }
+.phone-review-app #review-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.phone-review-app .review-status { flex: 0 0 32px; height: 32px; min-height: 32px; margin: 0 0 6px; padding: 3px 6px; gap: 5px; border-radius: 7px; }
+.phone-review-app .status-copy { min-width: 0; gap: 0; }
+.phone-review-app .status-copy > .status-icon, .phone-review-app .status-copy div > span, .phone-review-app .progress-percent { display: none; }
+.phone-review-app .status-copy > div { min-width: 0; }
+.phone-review-app .status-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; line-height: 1.3; }
+.phone-review-app .review-status-actions { gap: 4px; }
+.phone-review-app .review-status-actions > .icon-button { width: 26px; height: 24px; }
+.phone-review-app .depth-select select { min-height: 22px; padding: 3px 21px 3px 6px; font-size: 9px; }
+.phone-review-app .depth-select > svg { right: 5px; width: 11px; }
+.phone-review-app .phone-offline-indicator { margin: 0; padding: 0; display: grid; place-items: center; width: 16px; height: 22px; }
+.phone-review-app .analysis-progress { height: 2px; }
+.phone-review-workspace { flex: 1; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
+.phone-board { display: grid; grid-template-rows: 28px var(--phone-board-size) 42px; gap: 4px; min-width: 0; min-height: 0; }
+.phone-board-heading { display: flex; align-items: center; gap: 3px; min-width: 0; height: 28px; }
+.phone-review-app .phone-board-heading .board-caption { flex: 1; min-width: 0; min-height: 26px; height: 26px; padding: 3px 6px; margin: 0; gap: 5px; font-size: 10px; border-radius: 5px; }
+.phone-review-app .phone-board-heading .board-caption > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phone-review-app .phone-board-heading .icon-button { width: 28px; height: 28px; }
+.phone-review-app .phone-back-to-game { color: #8c599a; background: #ece1f2; }
+.phone-review-app .phone-board .board-frame { width: calc(var(--phone-board-size) + 20px); height: var(--phone-board-size); justify-self: center; }
+.phone-review-app .phone-board .board-with-eval { grid-template-columns: 12px minmax(0, 1fr); gap: 8px; height: 100%; }
+.phone-review-app .phone-board .chessboard { width: 100%; height: 100%; border-radius: 4px; }
+.phone-review-app .phone-board .board-branching .chessboard { box-shadow: 0 0 0 2px #ad8bc0; }
+.phone-review-app .phone-board .coordinate { font-size: 8px; }
+.phone-review-app .phone-board .board-navigation { padding: 0; height: 42px; gap: 5px; }
+.phone-review-app .playback-controls { flex: 1; gap: 0; }
+.phone-review-app .playback-controls .icon-button { width: 40px; height: 40px; }
+.phone-review-app .playback-controls .icon-button:first-child, .phone-review-app .playback-controls .icon-button:last-child { width: 30px; }
+.phone-review-app .play-button { width: 36px; height: 36px; }
+.phone-review-app .critical-controls { gap: 2px; }
+.phone-review-app .critical-controls > .icon-button { width: 28px; height: 38px; }
+.phone-review-app .next-critical-button { height: 38px; padding: 5px 3px; font-size: 10px; gap: 4px; }
+.phone-review-app .critical-label-full { display: none; }
+.phone-review-app .critical-label-short { display: inline; }
+.phone-review-details { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; border: 1px solid #e1d7e8; border-radius: 9px; background: #fffdfb; }
+.phone-panel-toolbar { display: flex; align-items: center; gap: 2px; flex: 0 0 34px; height: 34px; padding: 0 3px; border-bottom: 1px solid #e5dce9; background: #f3edf6; }
+.phone-panel-toolbar > div { flex: 1; display: flex; align-items: stretch; height: 100%; min-width: 0; }
+.phone-panel-toolbar [role="tab"] { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: #8b719a; padding: 5px 4px; position: relative; }
+.phone-panel-toolbar [aria-selected="true"] { color: #694a7b; font-weight: 650; background: #fffcff; }
+.phone-panel-toolbar [aria-selected="true"]::after { content: ""; height: 2px; background: #9d7caf; position: absolute; bottom: 0; left: 5px; right: 5px; }
+.phone-panel-toolbar > .icon-button { width: 28px; height: 30px; }
+.phone-panel-toolbar > .phone-hints { color: #b5a6bd; }
+.phone-panel-toolbar > .hints-on { color: #8b6c9b; }
+.phone-panel-scroll { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 8px; scrollbar-width: thin; scrollbar-color: #d8c7e1 transparent; }
+.phone-panel-scroll:focus-visible { outline: 2px solid #b398c4; outline-offset: -2px; }
+.phone-panel-scroll .engine-error, .phone-panel-scroll .offline-warning { padding: 8px; margin: 0 0 8px; font-size: 10px; line-height: 1.6; gap: 6px; max-height: 86px; overflow: auto; flex-shrink: 0; }
+.phone-panel-scroll .engine-error > span, .phone-panel-scroll .offline-warning > span { min-width: 0; overflow-wrap: anywhere; }
+.phone-panel-scroll .engine-error > button, .phone-panel-scroll .offline-warning > button { min-height: 28px; font-size: 10px; }
+.phone-panel-scroll .coach-column { display: flex; flex-direction: column; gap: 8px; }
+.phone-panel-scroll .coach-intro, .phone-panel-scroll .coach-portrait, .phone-panel-scroll .coach-feedback::before, .phone-panel-scroll .coach-feedback > h2 { display: none; }
+.phone-panel-scroll .coach-card { order: 1; border-radius: 7px; }
+.phone-panel-scroll .coach-feedback { padding: 10px; border: 0; }
+.phone-panel-scroll .coach-move-label { margin-bottom: 6px; font-size: 11px; }
+.phone-panel-scroll .coach-feedback > p { font-size: 12px; line-height: 1.6; }
+.phone-panel-scroll .evaluation-comparison { margin-top: 8px; padding-top: 6px; }
+.phone-panel-scroll .response-button { min-height: 32px; margin-top: 6px; font-size: 11px; }
+.phone-panel-scroll .alternatives-card { order: 0; border-radius: 7px; padding: 9px; }
+.phone-panel-scroll .alternatives-card .section-heading { font-size: 11px; }
+.phone-panel-scroll .best-alternative { margin-top: 6px; padding: 8px; }
+.phone-panel-scroll .alternative-main > strong { font-size: 15px; }
+.phone-panel-scroll .alternative-preview { display: none; }
+.phone-panel-scroll .explore-label { margin-top: 6px; padding-top: 6px; font-size: 11px; min-height: 26px; }
+.phone-panel-scroll .more-alternatives { font-size: 10px; }
+.phone-panel-scroll .more-alternatives > summary { min-height: 30px; padding-top: 9px; }
+.phone-panel-scroll .more-alternatives > button { min-height: 38px; }
+.phone-panel-scroll .line-disclaimer { margin-top: 5px; font-size: 9px; line-height: 1.5; }
+.phone-panel-scroll .tactics-card { order: 2; padding: 10px; border-radius: 7px; }
+.phone-panel-scroll .tactics-card .section-heading { padding-bottom: 5px; font-size: 11px; }
+.phone-panel-scroll .tactic-item { padding: 8px 0; min-height: 40px; }
+.phone-panel-scroll .tactic-item strong { font-size: 11px; }
+.phone-panel-scroll .tactic-item small { font-size: 10px; }
+.phone-panel-scroll .takeaway-card { order: 3; padding: 10px; gap: 8px; }
+.phone-panel-scroll .takeaway-card p { font-size: 11px; line-height: 1.6; }
+.phone-panel-scroll .variation-strip { margin: 0; padding: 8px; border: 0; border-radius: 6px; display: flex; flex-direction: column; }
+.phone-panel-scroll .variation-strip > div:first-child { order: 0; min-height: 27px; }
+.phone-panel-scroll .variation-strip > div:first-child > button { min-height: 28px; font-size: 10px; }
+.phone-panel-scroll .variation-step-explanation { order: 1; margin-top: 6px; padding-top: 8px; }
+.phone-panel-scroll .variation-step-explanation > strong { font-size: 13px; }
+.phone-panel-scroll .variation-step-explanation > p { font-size: 12px; line-height: 1.6; }
+.phone-panel-scroll .variation-moves { order: 2; margin-top: 10px; gap: 5px; }
+.phone-panel-scroll .variation-moves > button { min-height: 30px; min-width: 30px; padding: 5px 7px; font-size: 12px; }
+.phone-panel-moves { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.phone-panel-moves > .journal-compact { display: flex; flex-direction: column; flex: 1; min-height: 0; border: 0; border-radius: 0; }
+.phone-panel-moves .moves-tab { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.phone-panel-moves .move-column-labels { flex: 0 0 20px; padding: 3px 10px; font-size: 9px; grid-template-columns: 28px 1fr 1fr; }
+.phone-panel-moves .moves-scroller { flex: 1; min-height: 0; height: auto; padding: 0 7px; }
+.phone-panel-moves .move-row { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr); }
+.phone-panel-moves .move-cell { font-size: 12px; min-height: 30px; padding: 5px 8px; }
+.phone-panel-moves .move-number { font-size: 10px; }
+.phone-panel-moves .filter-button { flex-shrink: 0; min-height: 28px; padding: 5px; margin: 4px 6px; width: calc(100% - 12px); font-size: 10px; }
+.phone-panel-moves .game-result { padding: 9px 0; }
+.phone-panel-chart .evaluation-graph { margin: 0; padding: 10px; }
+.phone-panel-chart .graph-plot { height: 74px; }
+.phone-panel-chart .graph-heading > span { font-size: 10px; }
+.phone-panel-chart .graph-footer { font-size: 8px; }
+.phone-game-players { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.phone-game-players .player-row { padding: 4px 2px; min-width: 0; gap: 5px; }
+.phone-game-players .player-avatar { width: 25px; height: 25px; }
+.phone-game-players .player-avatar .chess-piece { width: 22px; height: 22px; margin: 0; }
+.phone-game-players .player-info > strong { font-size: 10px; }
+.phone-game-players .player-info > span { font-size: 9px; margin-top: 3px; }
+.phone-game-players .player-accuracy { display: none; }
+.phone-opening { padding: 8px 3px; color: #928063; font-size: 10px; line-height: 1.5; }
+.phone-panel-chart .journal-compact { border: 0; background: transparent; }
+.phone-panel-chart .insights-tab { padding: 10px 3px; }
+.phone-panel-chart .accuracy-pair { margin-top: 9px; gap: 8px; }
+.phone-panel-chart .accuracy-pair > div { padding: 9px; }
+.phone-panel-chart .accuracy-pair strong { font-size: 23px; }
+.phone-panel-chart .classification-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.phone-panel-chart .classification-counts > div { font-size: 10px; }
+.phone-offline-copy { color: #899673; font-size: 10px; line-height: 1.6; padding: 9px 3px; }
+.phone-review-app .site-footer { display: none; }
+
+@media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  .phone-review-app { --phone-board-size: max(120px, min(calc(50vw - 36px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))); }
+  .phone-review-app .site-header { height: 36px; flex-basis: 36px; }
+  .phone-review-app .page-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 36px minmax(0, 1fr); gap: 4px 12px; }
+  .phone-review-app #review-panel { display: contents; }
+  .phone-review-app .workspace-mode-bar { grid-column: 1; grid-row: 1; height: 36px; padding: 2px 0; }
+  .phone-review-app .review-status { grid-column: 2; grid-row: 1; margin: 4px 0; height: 28px; min-height: 28px; }
+  .phone-review-workspace { grid-column: 1 / -1; grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; }
+  .phone-board { grid-template-rows: 24px var(--phone-board-size) 36px; gap: 2px; }
+  .phone-board-heading { height: 24px; }
+  .phone-review-app .phone-board-heading .board-caption { height: 24px; min-height: 24px; font-size: 9px; }
+  .phone-review-app .phone-board-heading .icon-button { height: 24px; width: 24px; }
+  .phone-review-app .phone-board .board-navigation { height: 36px; }
+  .phone-review-app .playback-controls .icon-button { width: 30px; height: 34px; }
+  .phone-review-app .playback-controls .icon-button:first-child, .phone-review-app .playback-controls .icon-button:last-child { width: 24px; }
+  .phone-review-app .play-button { width: 30px; height: 32px; }
+  .phone-review-app .critical-controls > .icon-button, .phone-review-app .next-critical-button { height: 34px; }
 }

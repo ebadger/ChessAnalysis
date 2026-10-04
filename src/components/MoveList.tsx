@@ -10,7 +10,7 @@ export function GradeBadge({ kind, small = false }: { kind: MoveAnalysis['classi
 }
 
 export function MoveList({
-  game, analyses, selectedPly, onSelect, onlyCritical, onToggleCritical, tab, onTabChange,
+  game, analyses, selectedPly, onSelect, onlyCritical, onToggleCritical, tab, onTabChange, compact = false,
 }: {
   game: ParsedGame
   analyses: MoveAnalysis[]
@@ -20,6 +20,7 @@ export function MoveList({
   onToggleCritical: () => void
   tab: 'moves' | 'insights'
   onTabChange: (tab: 'moves' | 'insights') => void
+  compact?: boolean
 }) {
   const listRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
@@ -61,7 +62,8 @@ export function MoveList({
   }
 
   return (
-    <aside className="journal panel" aria-label="Game journal">
+    <aside className={`journal panel${compact ? ' journal-compact' : ''}`} aria-label="Game journal">
+      {!compact && <>
       <div className="journal-heading">
         <span className="eyebrow"><Flower2 size={14} /> YOUR STUDY JOURNAL</span>
         <h2>A game to grow from.</h2>
@@ -74,9 +76,10 @@ export function MoveList({
         <button role="tab" aria-selected={tab === 'moves'} onClick={() => onTabChange('moves')}>Moves <span>{game.moves.length}</span></button>
         <button role="tab" aria-selected={tab === 'insights'} onClick={() => onTabChange('insights')}>Insights <Sparkles size={13} /></button>
       </div>
+      </>}
       {tab === 'moves' ? <div className="moves-tab" role="tabpanel" aria-label="Game moves">
         <div className="move-column-labels"><span>#</span><span><i className="side-dot side-white" /> White</span><span><i className="side-dot side-black" /> Black</span></div>
-        <div className="moves-scroller" ref={listRef}>
+        <div className="moves-scroller" ref={listRef} tabIndex={compact ? 0 : undefined} aria-label={compact ? 'Scroll game moves' : undefined}>
           {rows.filter((row) => !onlyCritical || [row.white, row.black].some((move) => move && analyses[move.ply - 1]?.critical)).map((row) =>
             <div className="move-row" key={row.number}>
               <span className="move-number">{row.number}.</span>
@@ -103,7 +106,7 @@ export function MoveList({
           })}
         </div>
       </div>}
-      <div className="journal-footnote"><Check size={13} /><span>Every move is a learning opportunity.</span></div>
+      {!compact && <div className="journal-footnote"><Check size={13} /><span>Every move is a learning opportunity.</span></div>}
     </aside>
   )
 }

@@ -59,6 +59,14 @@ Offline storage requires HTTPS or localhost and service-worker support. The cach
 - An annotated PGN download. Partial reviews export annotations only for completed moves.
 - No PGN uploads, analytics, third-party fonts, game storage, or language-model calls. Game data is held in memory and is cleared on refresh. Only application assets are saved in the offline cache. Export a study to keep it.
 
+### Phone-first game review
+
+On phones, the review fits within the current screen instead of stacking a long article below the board. The board, evaluation bar, current move/line indicator, and navigation stay visible. **Coach**, **Moves**, and **Chart** tabs share a compact lower panel; only that panel scrolls. Suggested moves and tactical callouts therefore update a board you can still see.
+
+Opening an alternative switches the Coach panel to its step-by-step explanation and labels the board **Alternative** or **Response** with the current step. The close button beside that label returns to the original game. Move history, critical-moment filtering, the evaluation timeline, player information, accuracy, export, hints, and the study guide remain available without leaving this layout.
+
+The layout accounts for dynamic phone viewport height and safe-area insets. Rotating a phone moves the details beside the board; wider desktop windows retain the full three-column workspace. Bot play keeps its existing touch-friendly board and game controls.
+
 ### Controls
 
 | Action | Control |
@@ -120,7 +128,7 @@ npm run build
 npm run test:browser
 ```
 
-If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, mobile layout, every bot level, takebacks, color choice, bot-game-to-review transfer, and fresh offline play/analysis after a full reload. Unit tests cover parsing, special moves and promotions, match outcomes, bot search settings and cancellation, score normalization, grading boundaries, and tactical patterns.
+If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, every bot level, takebacks, color choice, bot-game-to-review transfer, and fresh offline play/analysis after a full reload. Phone review checks measure board/panel bounds at 320x568, 360x640, and 390x844, ensure scrolling explanations never scrolls the board away, and cover landscape/desktop transitions. Unit tests cover parsing, special moves and promotions, match outcomes, bot search settings and cancellation, score normalization, grading boundaries, and tactical patterns.
 
 ## Engine licensing and references
 
