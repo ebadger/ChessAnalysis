@@ -69,6 +69,19 @@ export interface BoardArrow {
   tone?: 'sage' | 'rose' | 'gold'
 }
 
+export interface PieceMotion {
+  from: Square
+  to: Square
+  type: PieceSymbol
+  color: Color
+}
+
+export interface BoardMotion {
+  id: number
+  duration: number
+  pieces: PieceMotion[]
+}
+
 export type TacticKind = 'mate' | 'fork' | 'pin' | 'skewer' | 'discovery' | 'loose-piece' | 'capture' | 'check'
 
 export interface Tactic {

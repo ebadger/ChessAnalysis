@@ -195,6 +195,14 @@ h1 span { color: #8a738f; }
 .eval-flipped .eval-negative { top: auto; bottom: 9px; }
 .chessboard { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); aspect-ratio: 1; width: 100%; overflow: hidden; position: relative; border-radius: 5px; box-shadow: 0 3px 7px #3c3b3312, 0 0 0 1px #6e7d6820; isolation: isolate; }
 .board-rank { display: contents; }
+.piece-arriving { display: grid; place-items: center; width: 100%; height: 100%; animation-name: piece-arrive; animation-timing-function: step-end; animation-fill-mode: both; }
+.board-piece-motion { position: absolute; display: grid; place-items: center; width: 12.5%; height: 12.5%; z-index: 4; pointer-events: none; animation-name: piece-glide; animation-timing-function: linear; animation-fill-mode: both; }
+@keyframes piece-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes piece-glide {
+  from { transform: translate(var(--piece-dx), var(--piece-dy)); opacity: 1; }
+  99% { opacity: 1; }
+  to { transform: translate(0, 0); opacity: 0; }
+}
 .board-with-eval.board-no-eval { grid-template-columns: minmax(0, 1fr); gap: 0; }
 .board-square { display: grid; place-items: center; position: relative; aspect-ratio: 1; overflow: hidden; }
 button.board-square { width: 100%; min-width: 0; padding: 0; border: 0; border-radius: 0; }
@@ -283,6 +291,18 @@ button.board-square:focus-visible { outline: 3px solid #775287; outline-offset: 
 .offline-unavailable, .offline-status.offline-error { color: #997943; }
 
 .coach-column { grid-area: coach; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.coach-region { grid-area: coach; position: relative; min-width: 0; }
+.coach-region.replay-in-progress > .coach-content { visibility: hidden; pointer-events: none; }
+.key-replay-card { position: absolute; top: 0; left: 0; right: 0; padding: 17px; }
+.key-replay-card h2 { color: var(--ink); font-size: 17px; line-height: 1.35; font-weight: 400; margin-top: 9px; }
+.key-replay-card h2 > strong { font-weight: 650; }
+.key-replay-card > p { color: var(--muted); font-size: 12px; line-height: 1.7; margin-top: 9px; }
+.key-replay-progress { height: 3px; border-radius: 3px; background: var(--plum-soft); overflow: hidden; margin: 13px 0 9px; }
+.key-replay-progress > span { display: block; height: 100%; background: var(--plum); }
+.key-replay-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.key-replay-actions > button { min-height: 32px; font-size: 10px; }
+.replay-direction { flex-shrink: 0; display: inline-flex; align-items: center; color: var(--plum); }
+.board-replaying .chessboard { box-shadow: 0 0 0 1px var(--plum); }
 .coach-card { border: 1px solid #e6dfea; border-radius: 12px; background: #f5f0f7; overflow: hidden; }
 .coach-intro { text-align: center; padding: 15px 8px 0; }
 .coach-intro .eyebrow { justify-content: center; font-size: 8px; letter-spacing: .65px; color: #9876aa; }
@@ -784,6 +804,8 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  .board-piece-motion { display: none; }
+  .piece-arriving { animation: none; }
 }
 
 body:has(.phone-review-app) { overflow: hidden; }
@@ -860,6 +882,14 @@ body:has(.phone-review-app) { overflow: hidden; }
 .phone-panel-scroll .engine-error > span, .phone-panel-scroll .offline-warning > span { min-width: 0; overflow-wrap: anywhere; }
 .phone-panel-scroll .engine-error > button, .phone-panel-scroll .offline-warning > button { min-height: 28px; font-size: 10px; }
 .phone-panel-scroll .coach-column { display: flex; flex-direction: column; gap: 8px; }
+.phone-panel-scroll .coach-region.replay-in-progress > .coach-content { display: none; }
+.phone-panel-scroll .key-replay-card { position: static; padding: 7px; }
+.phone-panel-scroll .key-replay-card > .eyebrow { font-size: 8px; }
+.phone-panel-scroll .key-replay-card > .eyebrow > svg { width: 12px; height: 12px; }
+.phone-panel-scroll .key-replay-card h2 { font-size: 14px; line-height: 1.25; margin-top: 6px; }
+.phone-panel-scroll .key-replay-card > p { display: none; }
+.phone-panel-scroll .key-replay-progress { margin: 8px 0; }
+.phone-panel-scroll .key-replay-actions > button { min-height: 30px; }
 .phone-panel-scroll .coach-intro, .phone-panel-scroll .coach-portrait, .phone-panel-scroll .coach-feedback::before, .phone-panel-scroll .coach-feedback > h2 { display: none; }
 .phone-panel-scroll .coach-card { order: 1; border-radius: 7px; }
 .phone-panel-scroll .coach-feedback { padding: 10px; border: 0; }

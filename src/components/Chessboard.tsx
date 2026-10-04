@@ -1,9 +1,9 @@
 import { useId, useMemo, useState } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import { Chess, SQUARES } from 'chess.js'
 import type { Color, PieceSymbol, Square } from 'chess.js'
 import { colorName, formatEvaluation, PIECE_NAMES } from '../chess/game'
-import type { BoardArrow, Evaluation } from '../chess/types'
+import type { BoardArrow, BoardMotion, Evaluation } from '../chess/types'
 
 export function ChessPiece({ type, color }: { type: PieceSymbol; color: Color }) {
   const fill = color === 'w' ? 'var(--piece-white, #fffcf2)' : 'var(--piece-black, #393743)'
@@ -65,7 +65,7 @@ function squarePoint(square: Square, flipped: boolean) {
 }
 
 export function Chessboard({
-  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation, showEvaluation = true, interaction,
+  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation, showEvaluation = true, interaction, motion,
 }: {
   fen: string
   flipped: boolean
@@ -74,6 +74,7 @@ export function Chessboard({
   highlighted?: Square[]
   evaluation?: Evaluation
   showEvaluation?: boolean
+  motion?: BoardMotion | null
   interaction?: {
     enabled: boolean
     selected: Square | null
@@ -129,9 +130,12 @@ export function Chessboard({
           const checked = inCheck && piece?.type === 'k' && piece.color === chess.turn()
           const selected = interaction?.selected === square
           const legal = interaction?.destinations.includes(square)
+          const arriving = motion?.pieces.some((moving) => moving.to === square)
           const className = `board-square ${dark ? 'square-dark' : 'square-light'}${last ? ' square-last' : ''}${highlighted.includes(square) ? ' square-tactic' : ''}${checked ? ' square-check' : ''}${selected ? ' square-selected' : ''}`
           const contents = <>
-              {piece && <ChessPiece type={piece.type} color={piece.color} />}
+              {piece && (arriving && motion
+                ? <div key={`${motion.id}-${square}`} className="piece-arriving" style={{ animationDuration: `${motion.duration}ms` }}><ChessPiece type={piece.type} color={piece.color} /></div>
+                : <ChessPiece type={piece.type} color={piece.color} />)}
               {legal && <span className={piece ? 'legal-capture' : 'legal-dot'} />}
               {col === 0 && <span className="coordinate coordinate-rank">{rank}</span>}
               {row === 7 && <span className="coordinate coordinate-file">{file}</span>}
@@ -166,6 +170,18 @@ export function Chessboard({
             </g>
           })}
         </svg>
+        {motion?.pieces.map((piece) => {
+          const from = squarePoint(piece.from, flipped)
+          const to = squarePoint(piece.to, flipped)
+          const style: CSSProperties & { '--piece-dx': string; '--piece-dy': string } = {
+            left: `${(to.x - 50) / 8}%`,
+            top: `${(to.y - 50) / 8}%`,
+            animationDuration: `${motion.duration}ms`,
+            '--piece-dx': `${from.x - to.x}%`,
+            '--piece-dy': `${from.y - to.y}%`,
+          }
+          return <div key={`${motion.id}-${piece.to}`} className="board-piece-motion" data-from={piece.from} data-to={piece.to} style={style} aria-hidden="true"><ChessPiece type={piece.type} color={piece.color} /></div>
+        })}
       </div>
     </div>
   )
