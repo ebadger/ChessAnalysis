@@ -1,28 +1,32 @@
 import { Chess } from 'chess.js'
 import type { Color } from 'chess.js'
-import { colorName, describeEvaluation, materialBalance, PIECE_NAMES, playUci, replayLine } from './game'
+import { colorName, describeEvaluation, materialBalance, moveLabel, opposite, PIECE_NAMES, playUci, replayLine } from './game'
 import { isBookMove } from './openings'
 import { detectTactics, findLineTactics } from './tactics'
 import type { Classification, EngineLine, MoveAnalysis, ParsedGame, PositionAnalysis, Tactic } from './types'
 
-export const CLASSIFICATIONS: Record<Classification, { label: string; symbol: string; description: string }> = {
-  brilliant: { label: 'Brilliant', symbol: '!!', description: 'A sound, near-best piece sacrifice in a position not already clearly won. Detected conservatively.' },
-  great: { label: 'Great', symbol: '!', description: 'A best move that is substantially stronger than the next engine candidate.' },
-  best: { label: 'Best', symbol: '★', description: "Stockfish's first choice at the completed search depth." },
-  excellent: { label: 'Excellent', symbol: '✓', description: 'Very close to best: at most 2 percentage points of estimated expected-score loss.' },
-  good: { label: 'Good', symbol: '✓', description: 'A reasonable move: at most 5 percentage points of estimated expected-score loss.' },
-  book: { label: 'Book', symbol: '▤', description: 'An exact match in our small, curated opening repertoire, without a significant evaluation loss.' },
-  inaccuracy: { label: 'Inaccuracy', symbol: '?!', description: 'A small setback: 5-10 percentage points of estimated expected-score loss.' },
-  mistake: { label: 'Mistake', symbol: '?', description: 'A significant setback: 10-20 percentage points of estimated expected-score loss.' },
-  blunder: { label: 'Blunder', symbol: '??', description: 'A major setback: more than 20 percentage points of estimated expected-score loss.' },
-  miss: { label: 'Miss', symbol: '×', description: 'A missed mating or material opportunity, or failure to exploit a substantial previous mistake.' },
- }
+export const CLASSIFICATIONS: Record<Classification, { label: string; symbol: string; summary: string; description: string }> = {
+  brilliant: { label: 'Brilliant', symbol: '!!', summary: 'A sound piece sacrifice with a strong follow-up.', description: 'A near-best sacrifice in a position not already clearly won. Detected conservatively from the best-play line.' },
+  great: { label: 'Great', symbol: '!', summary: 'A best move with much weaker alternatives.', description: 'The best candidate exceeds the runner-up by more than 12 percentage points in the grading model.' },
+  best: { label: 'Best', symbol: '★', summary: "The engine's first choice.", description: "Stockfish's top move at the completed search depth. Other moves can be close in value." },
+  excellent: { label: 'Excellent', symbol: '✓', summary: 'Very close to the best move.', description: 'At most 2 percentage points of estimated expected-score loss.' },
+  good: { label: 'Good', symbol: '✓', summary: 'A reasonable move, with a small cost.', description: 'More than 2 and at most 5 percentage points of estimated expected-score loss.' },
+  book: { label: 'Book', symbol: '▤', summary: 'A familiar opening move from our repertoire.', description: 'An exact match in a small, curated opening repertoire, without a significant evaluation loss.' },
+  inaccuracy: { label: 'Inaccuracy', symbol: '?!', summary: 'A small setback in the position.', description: 'More than 5 and at most 10 percentage points of estimated expected-score loss.' },
+  mistake: { label: 'Mistake', symbol: '?', summary: 'A significant setback in position value.', description: 'More than 10 and at most 20 percentage points of estimated expected-score loss.' },
+  blunder: { label: 'Blunder', symbol: '??', summary: 'A major, often game-changing setback.', description: 'More than 20 percentage points of estimated expected-score loss.' },
+  miss: { label: 'Miss', symbol: '×', summary: 'A valuable opportunity was left on the board.', description: 'A missed mating or material opportunity, or failure to exploit a substantial previous mistake.' },
+}
 
 const criticalClasses = new Set<Classification>(['brilliant', 'great', 'inaccuracy', 'mistake', 'blunder', 'miss'])
 
+export function isKeyClassification(classification: Classification): boolean {
+  return criticalClasses.has(classification)
+}
+
 export function expectedScore(cp: number): number {
   return 1 / (1 + Math.exp(-0.00368208 * cp))
-}
+ }
 
 export function classifyLoss(loss: number): Classification {
   if (loss <= 0.02) return 'excellent'
@@ -147,6 +151,51 @@ export function analyzeMove(
     classification = 'book'
   }
 
+  const critical = isKeyClassification(classification)
+  const mover = colorName(move.color)
+  const opponent = colorName(opposite(move.color))
+  const finiteLoss = before.evaluation.mate === null && after.evaluation.mate === null
+  let keyReason: string | null = null
+  if (classification === 'brilliant' && best) {
+    const investment = -materialGain(move.before, best, move.color, 2) / 100
+    keyReason = `The best-play line accepts a sacrifice of about ${investment.toFixed(1)} material points from ${mover}, yet the engine still finds a sound position. The compensation, not the material count alone, makes this move special.`
+  } else if (classification === 'great' && best && before.lines[1]) {
+    const runnerUp = before.lines[1]
+    const gap = bestCp - runnerUp.score.cp * direction
+    const margin = before.evaluation.mate === null && runnerUp.score.mate === null
+      ? `about ${(gap / 100).toFixed(1)} evaluation points`
+      : `about ${((expectedScore(bestCp) - expectedScore(runnerUp.score.cp * direction)) * 100).toFixed(1)} percentage points in the grading model`
+    keyReason = `${move.san} is the strongest candidate. The next choice, ${runnerUp.sans[0]}, is ${margin} weaker for ${mover} at this depth. Finding this move preserves value that another choice would give up.`
+  } else if (classification === 'miss' && best) {
+    if (availableMate && (after.evaluation.mate === null || playedCp < 0)) {
+      keyReason = `The engine found a forced mating line for ${mover} beginning with ${best.sans[0]}. ${move.san} does not retain that detected mating line at this depth, making it a missed winning opportunity.`
+    } else if (gainedMaterial >= 200 && missedTactics.length) {
+      keyReason = `The stronger line beginning with ${best.sans[0]} gains about ${(gainedMaterial / 100).toFixed(1)} material points for ${mover} across the displayed ${best.moves.length} half-moves. The played move gives up a meaningful amount of the position's value instead.`
+    } else if (previous) {
+      keyReason = `${moveLabel(previous.move)} left an opportunity for ${mover}. ${best.sans[0]} takes better advantage of it; ${move.san} gives up part of the advantage that was available.`
+    }
+  } else if (critical) {
+    if (after.evaluation.mate !== null && playedCp < 0) {
+      keyReason = after.evaluation.mate === 0
+        ? `${opponent} has checkmate after this move. A forced result matters more than any material count.`
+        : `The engine now finds a forced mate for ${opponent} in ${Math.abs(after.evaluation.mate)} ${Math.abs(after.evaluation.mate) === 1 ? 'move' : 'moves'}. This is a decisive consequence, not just a small change in material.`
+    } else {
+      const magnitude = classification === 'inaccuracy' ? 'small' : classification === 'mistake' ? 'significant' : 'major'
+      keyReason = finiteLoss
+        ? `This gives up about ${(cpLoss / 100).toFixed(1)} evaluation points for ${mover}, shifting the position toward ${opponent}. That ${magnitude} setback makes it a useful moment to study, even if no piece was captured immediately.`
+        : `The engine's mating assessment changes at this move. This is a key study point because a forced result cannot be measured as an ordinary pawn-point loss.`
+    }
+  }
+  const materialChange = (materialBalance(new Chess(move.after), move.color) - materialBalance(new Chess(move.before), move.color)) / 100
+  const reply = critical && expectedLoss > .05 ? after.lines[0] : undefined
+  let replyExplanation = reply?.moves[0]
+    ? `${opponent}'s strongest reply is ${reply.sans[0]}. ${describeMoveIdea(move.after, reply.moves[0], detectTactics(move.after, reply.moves[0]))}`
+    : null
+  if (reply && replyExplanation && playedCp <= 0 && isSoundSacrifice(move.after, reply, opposite(move.color))) {
+    const investment = -materialGain(move.after, reply, opposite(move.color), 2) / 100
+    replyExplanation += ` In the shown line, ${opponent} then invests about ${investment.toFixed(1)} material points over the first two half-moves while keeping a sound evaluation. The idea depends on the continuation, not just the initial capture.`
+  }
+
   let heading: string
   let explanation: string
   if (!best) {
@@ -174,7 +223,7 @@ export function analyzeMove(
 
   return {
     move, classification, cpLoss, expectedLoss, before, after, best, tactics, missedTactics,
-    critical: criticalClasses.has(classification),
+    critical, keyReason, materialChange, replyExplanation,
     heading,
     explanation,
     lesson: teachingTip(missedTactics.length ? missedTactics : (isBest ? tactics : alternativeTactics), move),

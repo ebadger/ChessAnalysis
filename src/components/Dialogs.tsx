@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, BookOpen, FileUp, Flower2, Globe, LockKeyhole, Upload, X } from 'lucide-react'
-import { CLASSIFICATIONS } from '../chess/analysis'
+import { CLASSIFICATIONS, isKeyClassification } from '../chess/analysis'
 import { DEMO_PGN, FORK_PGN, parseGame } from '../chess/game'
 import type { Classification, ParsedGame } from '../chess/types'
 import type { ThemePreference } from '../hooks/useTheme'
@@ -14,6 +14,25 @@ export function useDialog(open: boolean, onClose: () => void) {
     if (!open && ref.current?.open) ref.current?.close()
   }, [open])
   return { ref, onCancel: onClose, onClose }
+}
+
+export function CategoryDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dialog = useDialog(open, onClose)
+  return <dialog {...dialog} className="app-dialog category-dialog" aria-labelledby="category-title">
+    <header className="category-dialog-heading"><div><span className="eyebrow">MORE THAN AN ICON</span><h2 id="category-title">Move categories</h2></div><button className="icon-button" aria-label="Close move categories" onClick={onClose}><X size={20} /></button></header>
+    <div className="category-dialog-content">
+      <p>A key moment means a useful place to learn, not always a game-deciding move. Categories tagged <strong>Key</strong> appear in key-moment navigation. Pending means the engine has not finished reviewing that move.</p>
+      <div className="category-list">{Object.entries(CLASSIFICATIONS).map(([key, category]) => {
+        const classification = key as Classification
+        return <div className="category-row" key={key}><GradeBadge kind={classification} /><div><strong>{category.label}{isKeyClassification(classification) && <span className="key-moment-tag">KEY</span>}</strong><p>{category.summary}</p><small>{category.description}</small></div></div>
+      })}</div>
+      <h3>What are the points?</h3>
+      <p><strong>Evaluation points</strong> are pawn units of engine assessment; 100 centipawns make one point. Positive scores favor White and negative scores favor Black. Position value includes activity and king safety, not just pieces.</p>
+      <p><strong>Material points</strong> count pieces: pawn 1, knight about 3.2, bishop about 3.3, rook 5, queen 9. A displayed line's gain or sacrifice is conditional on that continuation.</p>
+      <p><strong>M3</strong> means a mating line for White in three moves; <strong>-M3</strong> means one for Black. Mate is not converted into a huge, misleading point loss.</p>
+      <p><strong>Grading-model percentage points</strong> determine the ordinary loss bands. They are not Elo, accuracy points, or a guaranteed win probability. These categories are independent estimates inspired by Chess.com's public vocabulary, not its proprietary grading.</p>
+    </div>
+  </dialog>
 }
 
 export function ImportDialog({ open, onClose, onImport }: {
@@ -90,6 +109,7 @@ export function GuideDialog({ open, onClose, themePreference, onThemeChange, the
         <p>The moon/sun button beside the activity tabs switches themes instantly. Your choice is saved on this device, separately from games; games are still kept only in memory.</p>
         {themeWarning && <p className="form-error" role="alert">{themeWarning}</p>}
         <h3>Explore, don't just memorize</h3>
+        <p>Each selected move now spells out its category and meaning. Key moves include a <strong>Why this is a key move</strong> explanation, the evaluation before and after, the mover's point cost, and relevant reply or material information. The question-mark buttons in Coach and Moves open a compact category guide.</p>
         <p>Choose any move in the journal. Use the board controls or left/right arrow keys to step through the game. The key-moment buttons jump to critical moves. Click a suggested alternative to rewind to the position <em>before</em> the played move, then play through both sides of that possible future. "Back to game" returns to the original position.</p>
         <p><strong>Compare</strong> is on by default. The board shows the position before the selected move: a solid green arrow marks the engine's best move, and a dashed rose arrow marks what was played. The recommended piece is outlined. If both moves are the same, only one green arrow appears. The legend includes move notation so color is not the only cue.</p>
         <p>Use the comparison control beside the flip button to see the actual position after the move instead. The evaluation bar follows the displayed position; the chart shows actual after-move evaluations. If the engine has not reached a position yet, the best move is marked pending rather than invented. Overlapping comparison paths are separated.</p>

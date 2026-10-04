@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { Chess } from 'chess.js'
-import { analyzeMove, classifyLoss, expectedScore, studyAccuracy } from './analysis'
-import { exportAnnotatedPgn, parseGame, playUci } from './game'
+import { analyzeMove, CLASSIFICATIONS, classifyLoss, expectedScore, isKeyClassification, studyAccuracy } from './analysis'
+import { evaluationPointLoss, exportAnnotatedPgn, parseGame, playUci } from './game'
 import type { EngineLine, PositionAnalysis } from './types'
 
 function position(fen: string, cp: number, moves: string[], secondCp?: number): PositionAnalysis {
   const chess = new Chess(fen)
   const line: EngineLine = { rank: 1, depth: 12, score: { cp, mate: null }, moves, sans: moves.map((move) => playUci(chess, move).san) }
   const lines = [line]
-  if (secondCp !== undefined) lines.push({ ...line, rank: 2, score: { cp: secondCp, mate: null } })
+  if (secondCp !== undefined) {
+    const alternative = new Chess(fen).moves({ verbose: true }).find((move) => move.lan !== moves[0])!
+    lines.push({ ...line, rank: 2, score: { cp: secondCp, mate: null }, moves: [alternative.lan], sans: [alternative.san] })
+  }
   return { fen, evaluation: { cp, mate: null }, depth: 12, terminal: false, lines }
 }
 
@@ -28,6 +31,8 @@ describe('independent move grading', () => {
     const analysis = analyzeMove(game, 1, before, after)
     expect(analysis.classification).toBe('blunder')
     expect(analysis.cpLoss).toBe(400)
+    expect(evaluationPointLoss(analysis)).toBe(4)
+    expect(analysis.keyReason).toContain('4.0 evaluation points for Black')
   })
 
   it('does not invent loss from search noise', () => {
@@ -48,9 +53,11 @@ describe('independent move grading', () => {
     const game = parseGame('1. e4 *')
     const result = analyzeMove(game, 0, position(game.initialFen, 20, ['e2e4']), position(game.moves[0].after, 20, ['e7e5']))
     expect(result.classification).toBe('book')
+    expect(result.keyReason).toBeNull()
     const nonBook = parseGame('1. h3 *')
     const result2 = analyzeMove(nonBook, 0, position(nonBook.initialFen, 0, ['e2e4']), position(nonBook.moves[0].after, -100, ['e7e5']))
     expect(result2.classification).toBe('inaccuracy')
+    expect(result2.keyReason).toContain('small setback')
   })
 
   it('identifies a missed high-value fork in a scored best-play line', () => {
@@ -61,6 +68,8 @@ describe('independent move grading', () => {
     expect(result.classification).toBe('miss')
     expect(result.missedTactics.some((tactic) => tactic.kind === 'fork')).toBe(true)
     expect(result.critical).toBe(true)
+    expect(result.keyReason).toContain('9.0 material points')
+    expect(result.keyReason).toContain('displayed 3 half-moves')
   })
 
   it('finds deeper missed tactics and records their exact board step', () => {
@@ -79,7 +88,10 @@ describe('independent move grading', () => {
     const move = game.moves[8]
     const best = position(move.before, 100, ['f3e5', 'g4d1', 'c4f7', 'e8e7', 'c3d5'])
     const after = position(move.after, 100, ['g4d1', 'c4f7', 'e8e7', 'c3d5'])
-    expect(analyzeMove(game, 8, best, after).classification).toBe('brilliant')
+    const result = analyzeMove(game, 8, best, after)
+    expect(result.classification).toBe('brilliant')
+    expect(result.keyReason).toContain('8.0 material points')
+    expect(result.materialChange).toBe(1)
     expect(analyzeMove(game, 8, { ...best, evaluation: { cp: 500, mate: null } }, after).classification).not.toBe('brilliant')
   })
 
@@ -89,6 +101,8 @@ describe('independent move grading', () => {
     const pgn = exportAnnotatedPgn(game, [result])
     expect(pgn).toContain('[%eval -2.00]')
     expect(pgn).toContain('Suggested line: e4')
+    expect(pgn).toContain('Evaluation cost: 2.0 pawn units')
+    expect(pgn).toMatch(/Key\s+moment:/)
     expect(parseGame(pgn).moves.map((move) => move.uci)).toEqual(game.moves.map((move) => move.uci))
     expect(parseGame(pgn).headers.Annotator).toContain('Badger-Flores')
   })
@@ -101,5 +115,63 @@ describe('independent move grading', () => {
     expect(studyAccuracy([result], 'w')).toBeGreaterThan(0)
     expect(studyAccuracy([result], 'w')).toBeLessThan(100)
     expect(expectedScore(0)).toBe(.5)
+  })
+
+  it('explains a good key move by its margin over the next candidate', () => {
+    const game = parseGame('1. h3 *')
+    const result = analyzeMove(game, 0, position(game.initialFen, 0, ['h2h3'], -300), position(game.moves[0].after, 0, ['e7e5']))
+    expect(result.classification).toBe('great')
+    expect(result.keyReason).toContain('3.0 evaluation points')
+    expect(result.keyReason).toContain('next choice')
+    expect(evaluationPointLoss(result)).toBe(0)
+  })
+
+  it('never turns mate scores into enormous pawn-point losses', () => {
+    const game = parseGame('1. f3 e5 2. g4 Qh4# 0-1')
+    const before = position(game.moves[2].before, -20, ['g2g3'])
+    const after = position(game.moves[2].after, -100000, ['d8h4'])
+    after.evaluation = { cp: -100000, mate: -1 }
+    after.lines[0].score = after.evaluation
+    const result = analyzeMove(game, 2, before, after)
+    expect(result.classification).toBe('blunder')
+    expect(evaluationPointLoss(result)).toBeNull()
+    expect(result.keyReason).toContain('forced mate for Black in 1')
+    expect(result.replyExplanation).toContain('Qh4#')
+    expect(result.materialChange).toBe(0)
+  })
+
+  it('distinguishes immediate material gained from evaluation lost', () => {
+    const game = parseGame('1. e4 d5 2. exd5 *')
+    const result = analyzeMove(game, 2, position(game.moves[2].before, 0, ['b1c3']), position(game.moves[2].after, -200, ['d8d5']))
+    expect(result.materialChange).toBe(1)
+    expect(evaluationPointLoss(result)).toBe(2)
+    expect(result.replyExplanation).toContain('Qxd5')
+  })
+
+  it('explains a missed mating line without assigning a finite point cost', () => {
+    const game = parseGame('[SetUp "1"]\n[FEN "7k/5K2/6Q1/8/8/8/8/8 w - - 0 1"]\n\n1. Qg5 *')
+    const before = position(game.initialFen, 100000, ['g6g7'])
+    before.evaluation = { cp: 100000, mate: 1 }
+    before.lines[0].score = before.evaluation
+    const after = position(game.moves[0].after, 0, ['h8h7'])
+    const result = analyzeMove(game, 0, before, after)
+    expect(result.classification).toBe('miss')
+    expect(result.keyReason).toContain('forced mating line for White')
+    expect(result.keyReason).toContain('Qg7#')
+    expect(evaluationPointLoss(result)).toBeNull()
+    expect(exportAnnotatedPgn(game, [result])).not.toContain('1000.0')
+  })
+
+  it('explains failure to exploit the previous move without inventing a material win', () => {
+    const game = parseGame('1. h3 h6 *')
+    const first = analyzeMove(game, 0, position(game.initialFen, 0, ['e2e4']), position(game.moves[0].after, -300, ['e7e5']))
+    const result = analyzeMove(game, 1, position(game.moves[1].before, -300, ['e7e5']), position(game.moves[1].after, 0, ['e2e4']), first)
+    expect(result.classification).toBe('miss')
+    expect(result.keyReason).toContain('1. h3 left an opportunity for Black')
+  })
+
+  it('provides a plain-language meaning for every category and flags the actual key categories', () => {
+    expect(Object.values(CLASSIFICATIONS).every((category) => category.summary.length > 10)).toBe(true)
+    expect(Object.keys(CLASSIFICATIONS).filter((kind) => isKeyClassification(kind as keyof typeof CLASSIFICATIONS))).toEqual(['brilliant', 'great', 'inaccuracy', 'mistake', 'blunder', 'miss'])
   })
 })

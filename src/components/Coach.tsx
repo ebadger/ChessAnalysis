@@ -1,12 +1,12 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Flower2, Lightbulb, ScanEye, Sparkles, Sprout } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, CircleHelp, Flower2, Lightbulb, ScanEye, Sparkles, Sprout } from 'lucide-react'
 import { CLASSIFICATIONS } from '../chess/analysis'
-import { formatEvaluation, moveLabel } from '../chess/game'
+import { colorName, evaluationPointLoss, formatEvaluation, moveLabel } from '../chess/game'
 import type { EngineLine, GameMove, MoveAnalysis, Tactic } from '../chess/types'
 import { Badger } from './Badger'
 import { GradeBadge } from './MoveList'
 
 export function Coach({
-  analysis, move, pending, onExplore, onReply, onTactic, activeTactic,
+  analysis, move, pending, onExplore, onReply, onTactic, activeTactic, onShowCategories,
 }: {
   analysis?: MoveAnalysis
   move?: GameMove
@@ -15,10 +15,12 @@ export function Coach({
   onReply: () => void
   onTactic: (tactic: Tactic, suggested: boolean) => void
   activeTactic: Tactic | null
+  onShowCategories: () => void
 }) {
   const suggested = Boolean(analysis?.missedTactics.length)
   const tactics = analysis ? (suggested ? analysis.missedTactics : analysis.tactics) : []
   const best = analysis?.best
+  const loss = analysis ? evaluationPointLoss(analysis) : null
   return (
     <aside className="coach-column" aria-label="Badger-Flores coaching">
       <section className="coach-card">
@@ -31,22 +33,33 @@ export function Coach({
           <span className="coach-role">Your companion at the board</span>
         </div>
         <div className="coach-feedback">
-          {analysis && move ? <div className={`coach-move-label text-${analysis.classification}`}>
-            <GradeBadge kind={analysis.classification} small />
-            <strong>{moveLabel(move)}</strong><span>· {CLASSIFICATIONS[analysis.classification].label}</span>
-          </div> : <div className="coach-move-label"><Sprout size={16} /><span>{!move ? 'A fresh perspective' : pending ? 'Looking a little closer...' : 'Ready when you are'}</span></div>}
-          <h2>{analysis?.heading ?? "Let's find your next little breakthrough."}</h2>
-          <p>{analysis?.explanation ?? (!move
+          {analysis && move ? <>
+            <div className="classification-heading">
+              <GradeBadge kind={analysis.classification} />
+              <div><strong className={`classification-name text-${analysis.classification}`}>{CLASSIFICATIONS[analysis.classification].label}</strong><span>{moveLabel(move)}{analysis.critical && <b className="key-moment-tag">KEY MOMENT</b>}</span></div>
+              <button className="icon-button" aria-label="Explain move categories" title="What do the move categories mean?" onClick={onShowCategories}><CircleHelp size={18} /></button>
+            </div>
+            <p className="classification-summary">{CLASSIFICATIONS[analysis.classification].summary}</p>
+            <div className="move-impact-grid">
+              <div><span className="impact-label">White evaluation</span><div className="evaluation-comparison" title="Before and after the played move, from White's perspective."><strong>{formatEvaluation(analysis.before.evaluation)}</strong><ArrowRight size={13} /><strong>{formatEvaluation(analysis.after.evaluation)}</strong></div></div>
+              <div className="move-cost"><span className="impact-label">{colorName(move.color)}'s move cost</span><strong>{loss === null ? 'Mate score' : `${loss.toFixed(1)} points`}</strong></div>
+            </div>
+            <p className="points-note">{loss === null ? 'Mate is a forced result, not a finite pawn-point loss.' : 'Evaluation points: one pawn unit each, not necessarily captured material.'}</p>
+            {analysis.materialChange !== 0 && <p className="material-change">Material on the played move: <strong>{analysis.materialChange > 0 ? '+' : ''}{analysis.materialChange.toFixed(1)} points</strong>. Replies can change this.</p>}
+            {analysis.keyReason && <section className="key-move-reason" aria-label="Why this is a key move"><h3>Why this is a key move</h3><p>{analysis.keyReason}</p></section>}
+            <details className="grading-details"><summary>Why this classification?</summary><p>The grading-model drop for {colorName(move.color)} is about <strong>{(analysis.expectedLoss * 100).toFixed(1)} percentage points</strong>. {CLASSIFICATIONS[analysis.classification].description}</p><p>These are independent study estimates, not Elo points or a guaranteed win probability. Values are rounded; a deeper search may change them.</p><button className="text-button" onClick={onShowCategories}>See all move categories <ArrowRight size={12} /></button></details>
+            <h3 className="move-idea-heading">{best?.moves[0] === move.uci ? 'The idea in your move' : 'What to notice'}</h3>
+            <p className="move-explanation">{analysis.explanation}</p>
+            {analysis.replyExplanation && <p className="reply-explanation">{analysis.replyExplanation}</p>}
+          </> : <>
+            <div className="coach-move-label"><Sprout size={16} /><span>{!move ? 'A fresh perspective' : pending ? 'Looking a little closer...' : 'Ready when you are'}</span></div>
+            <h2>Let's find your next little breakthrough.</h2>
+            <p>{!move
             ? "Every game has a story. Step forward through the moves, or jump to a key moment to see where the story changes."
             : pending
               ? "I'm checking the moves with Stockfish, right here on your device. You can explore the board while I find the ideas worth pausing for."
-              : 'Start or restart the review to discover the possibilities in this position. Your game stays right here, just between us.')}</p>
-          {analysis && <div className="evaluation-comparison" title="Engine evaluations from White's perspective, before and after the played move. These are not material counts.">
-            <span>Before <strong>{formatEvaluation(analysis.before.evaluation)}</strong></span>
-            <ArrowRight size={14} />
-            <span>After <strong>{formatEvaluation(analysis.after.evaluation)}</strong></span>
-            <small>White eval</small>
-          </div>}
+              : 'Start or restart the review to discover the possibilities in this position. Your game stays right here, just between us.'}</p>
+          </>}
           {analysis && analysis.expectedLoss > .05 && analysis.after.lines[0] && <button className="text-button response-button" onClick={onReply}>
             <ScanEye size={15} /> See what the opponent can do <ArrowUpRight size={14} />
           </button>}

@@ -16,7 +16,7 @@ import type { AnalysisMode, BoardArrow, EngineLine, ParsedGame, Tactic, Variatio
 import { Badger } from './components/Badger'
 import { Chessboard, ChessPiece } from './components/Chessboard'
 import { Coach } from './components/Coach'
-import { GuideDialog, ImportDialog } from './components/Dialogs'
+import { CategoryDialog, GuideDialog, ImportDialog } from './components/Dialogs'
 import { EvaluationGraph } from './components/EvaluationGraph'
 import { GradeBadge, MoveList } from './components/MoveList'
 import { PlayGame } from './components/PlayGame'
@@ -50,6 +50,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const [activeTactic, setActiveTactic] = useState<Tactic | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [onlyCritical, setOnlyCritical] = useState(false)
   const [journalTab, setJournalTab] = useState<'moves' | 'insights'>('moves')
   const [notice, setNotice] = useState<string | null>(null)
@@ -134,6 +135,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const changeView = (next: 'review' | 'play') => { haltPlayback(); setView(next) }
   const openImport = () => { haltPlayback(); setImportOpen(true) }
   const openGuide = () => { haltPlayback(); setGuideOpen(true) }
+  const openCategories = () => { haltPlayback(); setCategoriesOpen(true) }
   const step = useCallback((direction: number) => {
     setActiveTactic(null)
     if (variation) {
@@ -188,7 +190,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target
-      if (view !== 'review' || importOpen || guideOpen || event.ctrlKey || event.altKey || event.metaKey ||
+      if (view !== 'review' || importOpen || guideOpen || categoriesOpen || event.ctrlKey || event.altKey || event.metaKey ||
           (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select')))) return
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault()
@@ -206,7 +208,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [view, importOpen, guideOpen, jump, leaveVariation, nextCritical, previousCritical, selectCritical, step, haltPlayback, flipBoard])
+  }, [view, importOpen, guideOpen, categoriesOpen, jump, leaveVariation, nextCritical, previousCritical, selectCritical, step, haltPlayback, flipBoard])
 
   useEffect(() => {
     if (!notice) return
@@ -258,11 +260,11 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     </div>
   }
 
-  const journalView = (tab: 'moves' | 'insights', compact = false) => <MoveList game={game} analyses={analyses} selectedPly={replaying ? boardPosition : selectedPly} onSelect={selectMove} onlyCritical={onlyCritical} onToggleCritical={() => setOnlyCritical((value) => !value)} tab={tab} onTabChange={setJournalTab} compact={compact} />
+  const journalView = (tab: 'moves' | 'insights', compact = false) => <MoveList game={game} analyses={analyses} selectedPly={replaying ? boardPosition : selectedPly} onSelect={selectMove} onlyCritical={onlyCritical} onToggleCritical={() => setOnlyCritical((value) => !value)} tab={tab} onTabChange={setJournalTab} compact={compact} onShowCategories={openCategories} />
   const coachPly = replayJourney?.startPly ?? selectedPly
   const replayLabel = replayJourney ? replayJourney.targetPly ? `${replayJourney.beforeMove ? 'before ' : ''}${moveLabel(game.moves[replayJourney.targetPly - 1])}` : 'the starting position' : ''
   const coachView = <div className={`coach-region${replaying ? ' replay-in-progress' : ''}`}>
-    <div className="coach-content" aria-hidden={replaying || undefined}><Coach analysis={analyses[coachPly - 1]} move={game.moves[coachPly - 1]} pending={pending} onExplore={explore} onReply={exploreReply} onTactic={showTactic} activeTactic={activeTactic} /></div>
+    <div className="coach-content" aria-hidden={replaying || undefined}><Coach analysis={analyses[coachPly - 1]} move={game.moves[coachPly - 1]} pending={pending} onExplore={explore} onReply={exploreReply} onTactic={showTactic} activeTactic={activeTactic} onShowCategories={openCategories} /></div>
     {replayJourney && <section className="key-replay-card panel" aria-label="Fast replay" data-start-ply={replayJourney.startPly} data-target-ply={replayJourney.targetPly} data-start-position={replayJourney.startPosition} data-target-position={replayJourney.targetPosition}>
       <span className="eyebrow">{replayJourney.targetPly > replayJourney.startPly ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />} FOLLOWING THE GAME</span>
       <h2>{replayJourney.targetPly > replayJourney.startPly ? 'Forward to' : 'Back to'} <strong>{replayLabel}</strong></h2>
@@ -450,6 +452,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
       </main>
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importGame} />
       <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} themePreference={theme.preference} onThemeChange={theme.setPreference} themeWarning={theme.warning} />
+      <CategoryDialog open={categoriesOpen} onClose={() => setCategoriesOpen(false)} />
       {notice && <div className="toast" role="status"><Info size={16} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={15} /></button></div>}
       <span className="sr-only" role="status">{view === 'review' && status === 'complete' ? `Analysis complete. ${criticalPlies.length} key moments found.` : ''}</span>
       <span className="sr-only" role="status">{keyReplay.announcement}</span>

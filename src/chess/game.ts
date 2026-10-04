@@ -162,6 +162,10 @@ export function describeEvaluation(evaluation: Evaluation): string {
   return `${evaluation.cp > 0 ? 'White' : 'Black'} is ahead by about ${(Math.abs(evaluation.cp) / 100).toFixed(1)} pawns of evaluation`
 }
 
+export function evaluationPointLoss(analysis: Pick<MoveAnalysis, 'before' | 'after' | 'cpLoss'>): number | null {
+  return analysis.before.evaluation.mate !== null || analysis.after.evaluation.mate !== null ? null : analysis.cpLoss / 100
+}
+
 export function exportAnnotatedPgn(game: ParsedGame, analyses: MoveAnalysis[]): string {
   const chess = new Chess(game.initialFen)
   for (const [key, value] of Object.entries(game.headers)) chess.setHeader(key, value)
@@ -177,8 +181,11 @@ export function exportAnnotatedPgn(game: ParsedGame, analyses: MoveAnalysis[]): 
     const suggestion = analysis.best && analysis.best.moves[0] !== move.uci
       ? ` Suggested line: ${analysis.best.sans.slice(0, 8).join(' ')}.`
       : ''
+    const loss = evaluationPointLoss(analysis)
+    const impact = loss === null ? 'Mate score: no finite evaluation-point loss.' : `Evaluation cost: ${loss.toFixed(1)} pawn units.`
+    const keyReason = analysis.keyReason ? ` Key moment: ${analysis.keyReason}` : ''
     chess.setComment(
-      `[%eval ${evalTag}] ${analysis.classification}. ${analysis.explanation}${suggestion} (Local study estimate, depth ${analysis.before.depth}/${analysis.after.depth}.)`,
+      `[%eval ${evalTag}] ${analysis.classification}. ${impact} ${analysis.explanation}${keyReason}${suggestion} (Local study estimate, depth ${analysis.before.depth}/${analysis.after.depth}.)`,
     )
   }
   return chess.pgn({ maxWidth: 88 })

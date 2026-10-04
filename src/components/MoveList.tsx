@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { BookOpen, Check, Flag, Flower2, ListFilter, Sparkles } from 'lucide-react'
+import { BookOpen, Check, CircleHelp, Flag, Flower2, ListFilter, Sparkles } from 'lucide-react'
 import { CLASSIFICATIONS, studyAccuracy } from '../chess/analysis'
 import { moveLabel } from '../chess/game'
 import type { GameMove, MoveAnalysis, ParsedGame } from '../chess/types'
@@ -10,7 +10,7 @@ export function GradeBadge({ kind, small = false }: { kind: MoveAnalysis['classi
 }
 
 export function MoveList({
-  game, analyses, selectedPly, onSelect, onlyCritical, onToggleCritical, tab, onTabChange, compact = false,
+  game, analyses, selectedPly, onSelect, onlyCritical, onToggleCritical, tab, onTabChange, compact = false, onShowCategories,
 }: {
   game: ParsedGame
   analyses: MoveAnalysis[]
@@ -21,6 +21,7 @@ export function MoveList({
   tab: 'moves' | 'insights'
   onTabChange: (tab: 'moves' | 'insights') => void
   compact?: boolean
+  onShowCategories: () => void
 }) {
   const listRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
@@ -56,7 +57,7 @@ export function MoveList({
       aria-current={selectedPly === move.ply ? 'step' : undefined}
       onClick={() => onSelect(move.ply)}
     >
-      <span>{move.san}</span>
+      <span className="move-text"><span>{move.san}</span><small className="move-grade-name">{analysis ? CLASSIFICATIONS[analysis.classification].label : 'Pending'}</small></span>
       {analysis ? <GradeBadge kind={analysis.classification} small /> : <span className="ungraded-dot" title="Waiting for analysis" />}
     </button>
   }
@@ -78,7 +79,7 @@ export function MoveList({
       </div>
       </>}
       {tab === 'moves' ? <div className="moves-tab" role="tabpanel" aria-label="Game moves">
-        <div className="move-column-labels"><span>#</span><span><i className="side-dot side-white" /> White</span><span><i className="side-dot side-black" /> Black</span></div>
+        <div className="move-column-labels"><span><button className="categories-help icon-button" aria-label="Explain move categories" title="Move category guide" onClick={onShowCategories}><CircleHelp size={14} /></button></span><span><i className="side-dot side-white" /> White</span><span><i className="side-dot side-black" /> Black</span></div>
         <div className="moves-scroller" ref={listRef} tabIndex={compact ? 0 : undefined} aria-label={compact ? 'Scroll game moves' : undefined}>
           {rows.filter((row) => !onlyCritical || [row.white, row.black].some((move) => move && analyses[move.ply - 1]?.critical)).map((row) =>
             <div className="move-row" key={row.number}>

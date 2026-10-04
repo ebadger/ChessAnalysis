@@ -107,6 +107,9 @@ export interface MoveAnalysis {
   tactics: Tactic[]
   missedTactics: Tactic[]
   critical: boolean
+  keyReason: string | null
+  materialChange: number
+  replyExplanation: string | null
   heading: string
   explanation: string
   lesson: string
