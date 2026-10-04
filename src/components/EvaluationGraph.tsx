@@ -21,13 +21,13 @@ export function EvaluationGraph({
       <div className="graph-heading"><span><TrendingUp size={15} /> The shape of your game</span><small>White's perspective</small></div>
       <div className="graph-plot">
         <svg viewBox="0 0 600 84" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="graph-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a98fba" stopOpacity=".26" /><stop offset="100%" stopColor="#a98fba" stopOpacity=".03" /></linearGradient></defs>
-          <path d="M0 42H600" stroke="#d9d6da" strokeDasharray="4 5" />
+          <defs><linearGradient id="graph-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--chart-fill, #a98fba)" stopOpacity=".26" /><stop offset="100%" stopColor="var(--chart-fill, #a98fba)" stopOpacity=".03" /></linearGradient></defs>
+          <path d="M0 42H600" stroke="var(--chart-grid, #d9d6da)" strokeDasharray="4 5" />
           {points.length > 1 && <path d={`${line} L${points[points.length - 1].x},84 L8,84 Z`} fill="url(#graph-fill)" />}
-          {line && <path d={line} stroke="#8b6c9b" strokeWidth="2.2" fill="none" strokeLinejoin="round" />}
+          {line && <path d={line} stroke="var(--chart-line, #8b6c9b)" strokeWidth="2.2" fill="none" strokeLinejoin="round" />}
           {selected && <>
-            <path d={`M${selected.x} 2V84`} stroke="#81668f" strokeWidth="1" strokeDasharray="3 3" />
-            <circle cx={selected.x} cy={selected.y} r="4" fill="#765687" stroke="#fff" strokeWidth="2" />
+            <path d={`M${selected.x} 2V84`} stroke="var(--chart-line, #81668f)" strokeWidth="1" strokeDasharray="3 3" />
+            <circle cx={selected.x} cy={selected.y} r="4" fill="var(--chart-line, #765687)" stroke="var(--paper)" strokeWidth="2" />
           </>}
         </svg>
         {!positions.length && <span className="graph-placeholder">Your game's story will appear here.</span>}

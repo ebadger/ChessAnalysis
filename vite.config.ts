@@ -16,7 +16,7 @@ export default defineConfig({
             "default-src 'self'",
             "script-src 'self' 'wasm-unsafe-eval'",
             "style-src 'self' 'unsafe-inline'",
-            "connect-src 'self'",
+            "connect-src 'self' https://api.chess.com",
             "img-src 'self' data: blob:",
             "font-src 'self'",
             "worker-src 'self'",

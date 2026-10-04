@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowUpRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, CircleHelp, CloudOff, Download, Flower2, Focus, GitBranch,
-  Leaf, ListFilter, LoaderCircle, LockKeyhole, Pause, Play, RotateCcw, RotateCw, ShieldCheck,
-  SkipBack, SkipForward, Sprout, Swords, TrendingUp, Upload, X,
+  Info, Leaf, ListFilter, LoaderCircle, LockKeyhole, Moon, Pause, Play, RotateCcw, RotateCw, ShieldCheck,
+  SkipBack, SkipForward, Sprout, Sun, Swords, TrendingUp, Upload, X,
 } from 'lucide-react'
 import type { Color } from 'chess.js'
 import { Chess } from 'chess.js'
@@ -22,11 +22,14 @@ import { useAnalysis } from './hooks/useAnalysis'
 import { useBotGame } from './hooks/useBotGame'
 import { useOffline } from './hooks/useOffline'
 import { usePhoneLayout } from './hooks/usePhoneLayout'
+import { useTheme } from './hooks/useTheme'
+import type { ThemeSettings } from './hooks/useTheme'
 
 const exampleGame = parseGame(DEMO_PGN)
 const PHONE_PANELS = ['coach', 'moves', 'chart'] as const
 
-function App() {
+function App({ initialTheme }: { initialTheme: ThemeSettings }) {
+  const theme = useTheme(initialTheme)
   const [view, setView] = useState<'review' | 'play'>('review')
   const phoneLayout = usePhoneLayout()
   const phoneReview = phoneLayout && view === 'review'
@@ -157,6 +160,10 @@ function App() {
   }, [notice])
 
   useEffect(() => {
+    if (theme.warning) setNotice(theme.warning)
+  }, [theme.warning])
+
+  useEffect(() => {
     if (phoneReview && phonePanelRef.current) phonePanelRef.current.scrollTop = 0
   }, [phoneReview, phonePanel, selectedPly, variation?.baseFen, variation?.line, variation?.index])
 
@@ -250,6 +257,7 @@ function App() {
             <button id="play-tab" role="tab" aria-controls="play-panel" aria-selected={view === 'play'} onClick={() => { setPlaying(false); setView('play') }}><Swords size={16} /> Play a bot{botGame.match && !botGame.finished && <i title="Your game is waiting" />}</button>
           </div>
           <span><Sprout size={13} /> Play a little. Learn a little. Grow a little.</span>
+          <button className="icon-button theme-toggle" aria-label={`Switch to ${theme.theme === 'dark' ? 'light' : 'dark'} mode`} title={`Switch to ${theme.theme === 'dark' ? 'light' : 'dark'} mode`} onClick={theme.toggle}>{theme.theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button>
         </div>
         {!phoneReview && offlineWarning}
         {view === 'review' ? <section id="review-panel" role="tabpanel" aria-labelledby="review-tab">
@@ -354,8 +362,8 @@ function App() {
         <footer className="site-footer"><span><Flower2 size={15} /> Made for curious minds and growing games.</span><button className="text-button" onClick={() => setGuideOpen(true)}>About the coach & analysis <ArrowUpRight size={13} /></button></footer>
       </main>
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importGame} />
-      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} />
-      {notice && <div className="toast" role="status"><Download size={16} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={15} /></button></div>}
+      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} themePreference={theme.preference} onThemeChange={theme.setPreference} themeWarning={theme.warning} />
+      {notice && <div className="toast" role="status"><Info size={16} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={15} /></button></div>}
       <span className="sr-only" role="status">{view === 'review' && status === 'complete' ? `Analysis complete. ${criticalPlies.length} key moments found.` : ''}</span>
     </div>
   )

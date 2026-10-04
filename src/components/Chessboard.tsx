@@ -6,9 +6,9 @@ import { colorName, formatEvaluation, PIECE_NAMES } from '../chess/game'
 import type { BoardArrow, Evaluation } from '../chess/types'
 
 export function ChessPiece({ type, color }: { type: PieceSymbol; color: Color }) {
-  const fill = color === 'w' ? '#fffcf2' : '#393743'
-  const stroke = color === 'w' ? '#47444b' : '#25232f'
-  const detail = color === 'w' ? '#47444b' : '#bcb6c5'
+  const fill = color === 'w' ? 'var(--piece-white, #fffcf2)' : 'var(--piece-black, #393743)'
+  const stroke = color === 'w' ? 'var(--piece-white-edge, #47444b)' : 'var(--piece-black-edge, #25232f)'
+  const detail = color === 'w' ? 'var(--piece-white-detail, #47444b)' : 'var(--piece-black-detail, #bcb6c5)'
   return (
     <svg className={`chess-piece piece-${color}`} viewBox="0 0 48 48" aria-hidden="true">
       <g fill={fill} stroke={stroke} strokeWidth="1.65" strokeLinejoin="round" strokeLinecap="round">
