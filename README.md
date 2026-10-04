@@ -55,6 +55,7 @@ Offline storage requires HTTPS or localhost and service-worker support. The cach
 - Legal PGN replay, custom starting FENs, Black-to-move starts, castling, promotion, en passant, mate, and drawn positions. Annotations and variations are accepted; the PGN's **main line** is reviewed.
 - Real Stockfish analysis in a Web Worker. Quick review searches up to depth 12 / 400 ms per position; Deep review up to depth 18 / 1,400 ms per position. The first limit reached ends each search. Completed depth is shown; up to three candidates are retained.
 - Familiar move labels: Brilliant, Great, Best, Excellent, Good, Book, Inaccuracy, Mistake, Blunder, and Miss.
+- **Compare** is the default review view: the board shows the position before the selected move, with a solid green best-move arrow and a dashed rose played-move arrow. The recommended piece is outlined. If the moves match, just one green arrow is shown. Overlapping paths are separated, including promotions to different pieces on the same square.
 - A clickable evaluation timeline, two estimated study-accuracy scores, a move journal, a classification breakdown, and previous/next critical-moment navigation.
 - Key-moment navigation quickly replays every intervening move, forward or backward, with short piece slides rather than teleporting the board. Longer gaps play faster. The pause control stops at the current position; the replay card can skip straight to the destination. Repeated key-moment taps retarget from the intended destination, and keyboard J / Shift+J use the same behavior.
 - Separate alternate timelines for a better move **from the position before your move**, or for the opponent's response **from the position after it**. Step through either side with position-grounded explanations and a net-material-change readout, autoplay the line, or jump directly to a step without changing the original game.
@@ -82,9 +83,13 @@ On phones, the review fits within the current screen instead of stacking a long 
 
 Opening an alternative switches the Coach panel to its step-by-step explanation and labels the board **Alternative** or **Response** with the current step. The close button beside that label returns to the original game. Move history, critical-moment filtering, the evaluation timeline, player information, accuracy, export, hints, and the study guide remain available without leaving this layout.
 
+The **Compare** control beside the board's flip button switches between pre-move comparison and the actual played position. The legend identifies the mode and both move choices. Alternatives and tactical callouts temporarily show their own relevant positions rather than drawing comparison arrows on the wrong board. Each imported or bot-generated review starts with comparison and hints enabled. The evaluation bar follows the displayed position; the chart continues to show actual after-move game evaluations.
+
 The layout accounts for dynamic phone viewport height and safe-area insets. Rotating a phone moves the details beside the board; wider desktop windows retain the full three-column workspace. Bot play keeps its existing touch-friendly board and game controls.
 
 During a key-moment replay, the coaching panel shows the destination instead of rapidly changing explanations. Manual navigation, imports, view changes, and opening the guide interrupt playback safely. Each position is advanced on animation frames without skipping moves on slow devices; very long gaps can be skipped or stopped. Device **reduced motion** settings retain instant jumps without piece animation. Castling animates both pieces, and rewinding restores captures and promotions from the actual game positions.
+
+In comparison mode, key replay stops immediately before the destination move, so the board does not play that move and then rewind to draw its arrows. Comparison arrows are hidden while pieces are moving and restored on arrival. The played-position mode retains after-move replay.
 
 ### Controls
 

@@ -1,0 +1,123 @@
+import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { Chess } from 'chess.js'
+import { DEMO_PGN, parseGame } from '../src/chess/game'
+import { recordedFrames, recordFrames } from './helpers/review'
+
+test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, colorScheme: 'dark', reducedMotion: 'no-preference' })
+const PGN = '1. f3 e5 2. g4 Qh4# 0-1'
+const toggleName = 'Compare best and played moves'
+
+async function importGame(page: Page, pgn = PGN) {
+  await page.getByRole('button', { name: 'Import a game' }).tap()
+  await page.getByRole('textbox', { name: 'Your game in PGN format' }).fill(pgn)
+  await page.getByRole('button', { name: 'Review this game' }).tap()
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
+}
+
+test('comparison is the default, uses the pre-move board, and separates played and best arrows', async ({ page }, testInfo) => {
+  await page.goto('./')
+  await expect(page.getByRole('button', { name: toggleName })).toHaveAttribute('aria-pressed', 'true')
+  await importGame(page)
+  const game = parseGame(PGN)
+  await page.getByRole('tab', { name: 'Moves', exact: true }).tap()
+  await page.getByRole('button', { name: /^2\. g4/ }).tap()
+  await page.getByRole('tab', { name: 'Coach', exact: true }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[2].before)
+  await expect(page.locator('[data-square="g2"] .chess-piece')).toHaveCount(1)
+  await expect(page.locator('[data-square="g4"] .chess-piece')).toHaveCount(0)
+  const san = (await page.getByRole('button', { name: /^Explore best alternative/ }).getAttribute('aria-label'))!.replace('Explore best alternative ', '')
+  const best = new Chess(game.moves[2].before).move(san)
+  const played = page.locator('[data-arrow-tone="rose"]')
+  const preferred = page.locator('[data-arrow-tone="sage"]')
+  await expect(played).toHaveCount(1)
+  await expect(played).toHaveAttribute('data-arrow-from', 'g2')
+  await expect(played).toHaveAttribute('data-arrow-to', 'g4')
+  await expect(played.locator('path')).toHaveAttribute('stroke-dasharray', '22 16')
+  await expect(preferred).toHaveCount(1)
+  await expect(preferred).toHaveAttribute('data-arrow-from', best.from)
+  await expect(preferred).toHaveAttribute('data-arrow-to', best.to)
+  await expect(page.locator('.square-recommended')).toHaveAttribute('data-square', best.from)
+  await expect(page.locator('.comparison-legend')).toContainText(`Best: ${san}`)
+  await expect(page.locator('.comparison-legend')).toContainText('Played: g4')
+  const beforeScore = await page.locator('.evaluation-comparison strong').nth(0).innerText()
+  const afterScore = await page.locator('.evaluation-comparison strong').nth(1).innerText()
+  await expect(page.locator('.eval-number')).toHaveText(beforeScore)
+  await page.screenshot({ path: testInfo.outputPath('default-move-comparison.png'), fullPage: true })
+
+  const originalPath = await played.locator('path').getAttribute('d')
+  await page.getByRole('button', { name: 'Flip board' }).tap()
+  await expect(played.locator('path')).not.toHaveAttribute('d', originalPath!)
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[2].before)
+  await page.getByRole('button', { name: 'Board hints on' }).tap()
+  await expect(page.locator('.board-arrows path[marker-end]')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Board hints off' }).tap()
+  await page.getByRole('button', { name: toggleName }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[2].after)
+  await expect(page.locator('.eval-number')).toHaveText(afterScore)
+  await expect(page.locator('.board-arrows path[marker-end]')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Board hints on' }).tap()
+  await importGame(page)
+  await expect(page.getByRole('button', { name: toggleName })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'Board hints on' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.initialFen)
+})
+
+test('an actual best move has one arrow, while lines and tactics keep their own correct positions', async ({ page }) => {
+  await page.goto('./')
+  await importGame(page)
+  const game = parseGame(PGN)
+  await page.getByRole('button', { name: 'Last position' }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[3].before)
+  await expect(page.locator('.board-arrows path[marker-end]')).toHaveCount(1)
+  await expect(page.locator('[data-arrow-tone="sage"]')).toHaveAttribute('data-arrow-from', 'd8')
+  await expect(page.locator('[data-arrow-tone="sage"]')).toHaveAttribute('data-arrow-to', 'h4')
+  await expect(page.locator('.comparison-legend')).toContainText('Played = best: Qh4#')
+  expect(new Chess((await page.locator('.chessboard').getAttribute('data-fen'))!).isCheckmate()).toBe(false)
+  await page.getByRole('button', { name: /^Explore best alternative/ }).tap()
+  await expect(page.getByRole('button', { name: toggleName })).toHaveAttribute('aria-pressed', 'false')
+  await page.getByRole('button', { name: 'Next move', exact: true }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[3].after)
+  await page.getByRole('button', { name: 'Back to game', exact: true }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[3].before)
+  await page.locator('.tactic-item').first().tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[3].after)
+  await expect(page.locator('.comparison-legend')).toContainText('Tactic view')
+  await expect(page.locator('.square-tactic')).toHaveCount(2)
+  await page.getByRole('button', { name: toggleName }).tap()
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[3].before)
+  await expect(page.locator('.board-arrows path[marker-end]')).toHaveCount(1)
+})
+
+test('fast key replay lands directly before the decision without a final rewind or stale arrows', async ({ page }) => {
+  await page.goto('./')
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
+  await page.getByRole('tab', { name: 'Moves', exact: true }).tap()
+  const critical = await page.locator('.move-cell').evaluateAll((buttons) => buttons.flatMap((button, index) =>
+    /grade-(brilliant|great|inaccuracy|mistake|blunder|miss)\b/.test(button.querySelector('.grade-badge')?.className ?? '') ? [index + 1] : [],
+  ))
+  const game = parseGame(DEMO_PGN)
+  await page.getByRole('tab', { name: 'Coach', exact: true }).tap()
+  await page.getByRole('button', { name: 'First position' }).tap()
+  await recordFrames(page)
+  await page.getByRole('button', { name: 'Next key moment', exact: true }).tap()
+  await expect(page.locator('.key-replay-card')).toHaveAttribute('data-target-position', String(critical[0] - 1))
+  await expect(page.locator('.board-arrows path[marker-end]')).toHaveCount(0)
+  await expect(page.locator('.key-replay-card')).toHaveCount(0)
+  expect(await recordedFrames(page)).toEqual(game.positions.slice(0, critical[0]).map((position) => position.fen))
+  await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', game.moves[critical[0] - 1].before)
+  await expect(page.locator('.comparison-legend')).toContainText('Before move')
+
+  const pairs = critical.slice(1).map((end, index) => ({ start: critical[index], end })).sort((a, b) => (b.end - b.start) - (a.end - a.start))
+  const pair = pairs[0]
+  await page.getByRole('tab', { name: 'Moves', exact: true }).tap()
+  await page.locator('.move-cell').nth(pair.end - 1).tap()
+  await page.getByRole('tab', { name: 'Coach', exact: true }).tap()
+  await recordFrames(page)
+  await page.getByRole('button', { name: 'Previous key moment', exact: true }).tap()
+  await expect(page.locator('.key-replay-card')).toHaveCount(0)
+  expect(await recordedFrames(page)).toEqual(Array.from({ length: pair.end - pair.start + 1 }, (_, index) => game.positions[pair.end - 1 - index].fen))
+  const board = (await page.locator('.chessboard').boundingBox())!
+  expect(board.y + board.height).toBeLessThanOrEqual(844)
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(845)
+})

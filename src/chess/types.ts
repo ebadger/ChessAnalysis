@@ -67,6 +67,9 @@ export interface BoardArrow {
   from: Square
   to: Square
   tone?: 'sage' | 'rose' | 'gold'
+  dashed?: boolean
+  offset?: number
+  bend?: number
 }
 
 export interface PieceMotion {

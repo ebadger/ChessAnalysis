@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowLeft, ArrowUpRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight,
+  ArrowLeft, ArrowLeftRight, ArrowUpRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight, CircleHelp, CloudOff, Download, Flower2, Focus, GitBranch,
   Info, Leaf, ListFilter, LoaderCircle, LockKeyhole, Moon, Pause, Play, RotateCcw, RotateCw, ShieldCheck,
   SkipBack, SkipForward, Sprout, Sun, Swords, TrendingUp, Upload, X,
@@ -10,7 +10,8 @@ import { Chess } from 'chess.js'
 import { CLASSIFICATIONS, describeMoveIdea, studyAccuracy } from './chess/analysis'
 import { colorName, DEMO_PGN, downloadPgn, exportAnnotatedPgn, formatEvaluation, materialBalance, moveLabel, parseGame, replayLine } from './chess/game'
 import { detectTactics } from './chess/tactics'
-import { replayPieceMotions } from './chess/navigation'
+import { replayPieceMotions, reviewPositionIndex } from './chess/navigation'
+import { compareSelectedMove } from './chess/comparison'
 import type { AnalysisMode, BoardArrow, EngineLine, ParsedGame, Tactic, Variation } from './chess/types'
 import { Badger } from './components/Badger'
 import { Chessboard, ChessPiece } from './components/Chessboard'
@@ -42,6 +43,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const [selectedPly, setSelectedPly] = useState(18)
   const [flipped, setFlipped] = useState(false)
   const [hints, setHints] = useState(true)
+  const [compareMoves, setCompareMoves] = useState(true)
   const [playing, setPlaying] = useState(false)
   const autoplayTimer = useRef<number | null>(null)
   const [variation, setVariation] = useState<Variation | null>(null)
@@ -54,7 +56,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const { status, analyses, positions, error, start, stop } = useAnalysis(game, mode, view === 'review')
   const botGame = useBotGame(view === 'play')
   const offline = useOffline()
-  const keyReplay = useKeyMomentReplay(game, selectedPly, setSelectedPly, view === 'review')
+  const keyReplay = useKeyMomentReplay(game, selectedPly, setSelectedPly, view === 'review', compareMoves)
   const replayJourney = keyReplay.journey?.game === game && view === 'review' ? keyReplay.journey : null
   const replaying = replayJourney !== null
   const pending = status === 'loading' || status === 'analyzing'
@@ -64,8 +66,13 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const keyAnchor = replayJourney?.targetPly ?? selectedPly
   const nextCritical = criticalPlies.find((ply) => ply > keyAnchor)
   const previousCritical = [...criticalPlies].reverse().find((ply) => ply < keyAnchor)
+  const comparisonActive = compareMoves && !variation && !activeTactic
+  const beforePosition = reviewPositionIndex(selectedPly, true)
+  const beforeAnalysis = positions[beforePosition]
+  const comparison = useMemo(() => compareSelectedMove(game, selectedPly, beforeAnalysis), [game, selectedPly, beforeAnalysis])
+  const boardPosition = comparisonActive ? beforePosition : selectedPly
   const branchChess = useMemo(() => variation ? replayLine(variation.baseFen, variation.line.moves, variation.index) : null, [variation])
-  const fen = branchChess?.fen() ?? game.positions[selectedPly].fen
+  const fen = branchChess?.fen() ?? game.positions[boardPosition].fen
   const displayedChess = useMemo(() => new Chess(fen), [fen])
   const branchHistory = branchChess?.history({ verbose: true })
   const branchLast = branchHistory?.[branchHistory.length - 1]
@@ -75,11 +82,14 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     : 0
   const boardMotion = useMemo(() => {
     const frame = keyReplay.transition
-    if (!frame || frame.game !== game || frame.toPly !== selectedPly || variation || view !== 'review') return null
+    if (!frame || frame.game !== game || frame.toPly !== boardPosition || variation || activeTactic || view !== 'review') return null
     return { id: frame.id, duration: frame.duration, pieces: replayPieceMotions(game, frame.fromPly, frame.toPly) }
-  }, [keyReplay.transition, game, selectedPly, variation, view])
-  const lastMove = variation ? branchLast : boardMotion?.pieces[0] ?? move
-  const evaluation = variation?.line.score ?? positions[selectedPly]?.evaluation
+  }, [keyReplay.transition, game, boardPosition, variation, activeTactic, view])
+  const lastMove = variation ? branchLast : boardMotion?.pieces[0] ?? (comparisonActive ? undefined : move)
+  const evaluation = variation?.line.score ?? positions[boardPosition]?.evaluation
+  const captionMove = replaying ? game.moves[boardPosition - 1] : move
+  const captionAnalysis = replaying ? analyses[boardPosition - 1] : analysis
+  const terminalReason = !comparisonActive && !variation ? game.positions[boardPosition].terminalReason : null
   const positionIndex = variation?.index ?? selectedPly
   const lastIndex = variation?.line.moves.length ?? game.moves.length
   const progress = Math.round(analyses.length / game.moves.length * 100)
@@ -114,6 +124,13 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     haltPlayback()
     setFlipped((value) => !value)
   }, [haltPlayback])
+  const toggleComparison = () => {
+    haltPlayback()
+    setCompareMoves(!comparisonActive)
+    setVariation(null)
+    setActiveTactic(null)
+    if (!comparisonActive) setHints(true)
+  }
   const changeView = (next: 'review' | 'play') => { haltPlayback(); setView(next) }
   const openImport = () => { haltPlayback(); setImportOpen(true) }
   const openGuide = () => { haltPlayback(); setGuideOpen(true) }
@@ -212,6 +229,8 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     setJournalTab('moves')
     setView('review')
     setPhonePanel('coach')
+    setCompareMoves(true)
+    setHints(true)
   }
 
   const exportGame = () => {
@@ -220,12 +239,12 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   }
 
   const arrows: BoardArrow[] = []
-  if (hints && activeTactic) arrows.push(...activeTactic.arrows)
-  else if (hints && variation && variation.index < variation.line.moves.length) {
+  if (hints && !replaying && activeTactic) arrows.push(...activeTactic.arrows)
+  else if (hints && !replaying && variation && variation.index < variation.line.moves.length) {
     const next = variation.line.moves[variation.index]
     const nextMove = new Chess(fen).move({ from: next.slice(0, 2), to: next.slice(2, 4), promotion: next[4] })
     arrows.push({ from: nextMove.from, to: nextMove.to, tone: variation.kind === 'reply' ? 'rose' : 'sage' })
-  }
+  } else if (hints && !replaying && comparisonActive) arrows.push(...comparison.arrows)
 
   const player = (color: Color) => {
     const headerName = game.headers[color === 'w' ? 'White' : 'Black']
@@ -239,21 +258,33 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     </div>
   }
 
-  const journalView = (tab: 'moves' | 'insights', compact = false) => <MoveList game={game} analyses={analyses} selectedPly={selectedPly} onSelect={selectMove} onlyCritical={onlyCritical} onToggleCritical={() => setOnlyCritical((value) => !value)} tab={tab} onTabChange={setJournalTab} compact={compact} />
+  const journalView = (tab: 'moves' | 'insights', compact = false) => <MoveList game={game} analyses={analyses} selectedPly={replaying ? boardPosition : selectedPly} onSelect={selectMove} onlyCritical={onlyCritical} onToggleCritical={() => setOnlyCritical((value) => !value)} tab={tab} onTabChange={setJournalTab} compact={compact} />
   const coachPly = replayJourney?.startPly ?? selectedPly
-  const replayLabel = replayJourney ? replayJourney.targetPly ? moveLabel(game.moves[replayJourney.targetPly - 1]) : 'the starting position' : ''
+  const replayLabel = replayJourney ? replayJourney.targetPly ? `${replayJourney.beforeMove ? 'before ' : ''}${moveLabel(game.moves[replayJourney.targetPly - 1])}` : 'the starting position' : ''
   const coachView = <div className={`coach-region${replaying ? ' replay-in-progress' : ''}`}>
     <div className="coach-content" aria-hidden={replaying || undefined}><Coach analysis={analyses[coachPly - 1]} move={game.moves[coachPly - 1]} pending={pending} onExplore={explore} onReply={exploreReply} onTactic={showTactic} activeTactic={activeTactic} /></div>
-    {replayJourney && <section className="key-replay-card panel" aria-label="Fast replay" data-start-ply={replayJourney.startPly} data-target-ply={replayJourney.targetPly}>
+    {replayJourney && <section className="key-replay-card panel" aria-label="Fast replay" data-start-ply={replayJourney.startPly} data-target-ply={replayJourney.targetPly} data-start-position={replayJourney.startPosition} data-target-position={replayJourney.targetPosition}>
       <span className="eyebrow">{replayJourney.targetPly > replayJourney.startPly ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />} FOLLOWING THE GAME</span>
       <h2>{replayJourney.targetPly > replayJourney.startPly ? 'Forward to' : 'Back to'} <strong>{replayLabel}</strong></h2>
       <p>A quick look at every move in between. You can stop at any position.</p>
-      <div className="key-replay-progress" aria-hidden="true"><span style={{ width: `${100 * Math.abs(selectedPly - replayJourney.startPly) / Math.abs(replayJourney.targetPly - replayJourney.startPly)}%` }} /></div>
+      <div className="key-replay-progress" aria-hidden="true"><span style={{ width: `${100 * Math.abs(boardPosition - replayJourney.startPosition) / Math.abs(replayJourney.targetPosition - replayJourney.startPosition)}%` }} /></div>
       <div className="key-replay-actions"><button className="text-button" onClick={() => haltPlayback(true)}><Pause size={13} /> Stop here</button><button className="text-button" onClick={keyReplay.finish}>Skip to key moment <SkipForward size={13} /></button></div>
     </section>}
   </div>
-  const graphView = <EvaluationGraph game={game} positions={positions} selectedPly={selectedPly} onSelect={selectMove} />
-  const boardView = <Chessboard fen={fen} flipped={flipped} lastMove={lastMove} arrows={arrows} highlighted={hints ? activeTactic?.squares : []} evaluation={evaluation} motion={boardMotion} />
+  const graphView = <EvaluationGraph game={game} positions={positions} selectedPly={replaying ? boardPosition : selectedPly} onSelect={selectMove} />
+  const boardView = <Chessboard fen={fen} flipped={flipped} lastMove={lastMove} arrows={arrows} highlighted={hints ? activeTactic?.squares : []} evaluation={evaluation} motion={boardMotion} recommendedFrom={comparisonActive && hints && !replaying ? comparison.best?.from : undefined} />
+  const comparisonToggle = <button className="comparison-toggle icon-button" aria-label="Compare best and played moves" aria-pressed={comparisonActive} title={comparisonActive ? 'Show the position after the played move' : 'Compare played and best moves before the move'} onClick={toggleComparison}><ArrowLeftRight size={16} /><span>Compare</span></button>
+  const comparisonLegend = <div className={`comparison-legend${hints ? '' : ' arrows-hidden'}`} role="note" aria-label="Board move legend">
+    {replaying ? <span>Replaying the original game...</span>
+      : variation ? <><span>{variation.kind === 'reply' ? 'Response line' : 'Alternative line'}</span><span className={variation.kind === 'reply' ? 'legend-played' : 'legend-best'}>{variation.index < variation.line.sans.length ? `Next: ${variation.line.sans[variation.index]}` : 'Line complete'}</span></>
+        : activeTactic ? <span className="legend-tactic">Tactic view · after {move ? moveLabel(move) : 'the move'}</span>
+          : comparisonActive ? <>
+            <span className="comparison-position">{move ? 'Before move' : 'Start'}</span>
+            {comparison.sameMove ? <span className="legend-best" title={`Played and best: ${comparison.best?.san}`}><i className="legend-swatch" />Played = best: {comparison.best?.san}</span>
+              : <><span className="legend-best" title={`Best: ${comparison.best?.san ?? 'Not analyzed yet'}`}><i className="legend-swatch" />Best: {comparison.best?.san ?? (beforeAnalysis?.terminal ? 'No line' : pending ? 'Pending' : 'Not analyzed')}</span>{comparison.played && <span className="legend-played" title={`Played: ${comparison.played.san}`}><i className="legend-swatch" />Played: {comparison.played.san}</span>}</>}
+            {!hints && <span>Arrows off</span>}
+          </> : <span>{move ? 'After move · actual game position' : 'Starting position'}</span>}
+  </div>
   const engineWarning = error && <div className="engine-error" role="alert"><CircleHelp size={20} /><span>{error} The board and PGN navigation still work.</span><button className="text-button" onClick={() => { haltPlayback(); void start() }}>Retry analysis <RotateCw size={14} /></button></div>
   const offlineWarning = offline.status === 'error' && <div className="offline-warning" role="alert"><CloudOff size={18} /><span>Offline saving needs attention: {offline.message} You can still review games while this site is available.</span><button className="text-button" onClick={offline.retry}>Retry offline saving <RotateCw size={14} /></button></div>
   const navigationView = <div className="board-navigation">
@@ -334,15 +365,19 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
 
         {phoneReview ? <div className="phone-review-workspace">
           <section className="phone-board" id="study-board" aria-label="Always-visible review board">
+            <div className="phone-board-header">
             <div className="phone-board-heading">
               <div className="board-caption" aria-live={replaying ? 'off' : 'polite'}>
                 {replayJourney && <span className="replay-direction" aria-hidden="true">{replayJourney.targetPly > replayJourney.startPly ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}</span>}
                 {variation ? <><GitBranch size={14} /><span><strong>{variation.kind === 'reply' ? 'Response' : 'Alternative'} · {variation.index}/{variation.line.moves.length}</strong> {variation.index ? variation.line.sans[variation.index - 1] : variation.line.sans[0]}</span></>
-                  : move ? <>{analysis && <GradeBadge kind={analysis.classification} small />}<span><strong>{moveLabel(move)}</strong> · {game.positions[selectedPly].terminalReason ?? (analysis ? CLASSIFICATIONS[analysis.classification].label : 'Waiting for review')}</span></>
+                  : captionMove ? <>{captionAnalysis && <GradeBadge kind={captionAnalysis.classification} small />}<span><strong>{comparisonActive && !replaying ? 'Before ' : ''}{moveLabel(captionMove)}</strong> · {terminalReason ?? (captionAnalysis ? CLASSIFICATIONS[captionAnalysis.classification].label : 'Waiting for review')}</span></>
                     : <><Sprout size={14} /><span>Starting position · {colorName(displayedChess.turn())} to move</span></>}
               </div>
               {variation && <button className="icon-button phone-back-to-game" aria-label="Back to game" title="Return to the original game" onClick={leaveVariation}><X size={16} /></button>}
+              {comparisonToggle}
               <button className="icon-button" aria-label="Flip board" title="Flip board (F)" onClick={flipBoard}><RotateCw size={16} /></button>
+            </div>
+            {comparisonLegend}
             </div>
             <div className={`board-frame${variation ? ' board-branching' : ''}${replaying ? ' board-replaying' : ''}`}>{boardView}</div>
             {navigationView}
@@ -381,17 +416,18 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
           {journalView(journalTab)}
 
           <section className="board-column" id="study-board" aria-label="Interactive game review">
-            <div className="board-topline"><span>{game.headers.Event && game.headers.Event !== '?' ? game.headers.Event : 'Your game'}<span className="game-year">{game.headers.Date?.slice(0, 4) !== '????' && game.headers.Date ? ` · ${game.headers.Date.slice(0, 4)}` : ''}</span></span><button className="icon-button" aria-label="Flip board" title="Flip board (F)" onClick={flipBoard}><RotateCw size={16} /></button></div>
+            <div className="board-topline"><span>{game.headers.Event && game.headers.Event !== '?' ? game.headers.Event : 'Your game'}<span className="game-year">{game.headers.Date?.slice(0, 4) !== '????' && game.headers.Date ? ` · ${game.headers.Date.slice(0, 4)}` : ''}</span></span><div className="board-tools">{comparisonToggle}<button className="icon-button" aria-label="Flip board" title="Flip board (F)" onClick={flipBoard}><RotateCw size={16} /></button></div></div>
             {player(flipped ? 'w' : 'b')}
             <div className={`board-frame${variation ? ' board-branching' : ''}${replaying ? ' board-replaying' : ''}`}>
               {variation && <div className="branch-banner"><GitBranch size={14} /><strong>{variation.label}</strong><button aria-label="Back to game" onClick={leaveVariation}><X size={15} /><span>Back to game</span></button></div>}
               {boardView}
             </div>
+            {comparisonLegend}
             {player(flipped ? 'b' : 'w')}
 
             <div className="board-caption" aria-live={replaying ? 'off' : 'polite'}>
               {replayJourney && <span className="replay-direction" aria-hidden="true">{replayJourney.targetPly > replayJourney.startPly ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}</span>}
-              {variation ? <><GitBranch size={14} /><span>Alternative reality <strong>{variation.index === 0 ? 'Starting position' : `${variation.index} / ${variation.line.moves.length} steps`}</strong></span><span className="branch-eval-note">Line starts at {formatEvaluation(variation.line.score)}</span></> : move ? <>{analysis ? <GradeBadge kind={analysis.classification} small /> : <span className="caption-dot" />}<span><strong>{moveLabel(move)}</strong>{analysis ? ` · ${CLASSIFICATIONS[analysis.classification].label}` : ' · Ready to explore'}</span>{game.positions[selectedPly].terminalReason && <small>{game.positions[selectedPly].terminalReason}</small>}</> : <><Sprout size={14} /><span>The starting position. A whole game of possibilities.</span></>}
+              {variation ? <><GitBranch size={14} /><span>Alternative reality <strong>{variation.index === 0 ? 'Starting position' : `${variation.index} / ${variation.line.moves.length} steps`}</strong></span><span className="branch-eval-note">Line starts at {formatEvaluation(variation.line.score)}</span></> : captionMove ? <>{captionAnalysis ? <GradeBadge kind={captionAnalysis.classification} small /> : <span className="caption-dot" />}<span><strong>{comparisonActive && !replaying ? 'Before ' : ''}{moveLabel(captionMove)}</strong>{captionAnalysis ? ` · ${CLASSIFICATIONS[captionAnalysis.classification].label}` : ' · Ready to explore'}</span>{terminalReason && <small>{terminalReason}</small>}</> : <><Sprout size={14} /><span>The starting position. A whole game of possibilities.</span></>}
             </div>
             {navigationView}
 

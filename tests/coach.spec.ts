@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { Chess } from 'chess.js'
 import { readFile } from 'node:fs/promises'
 import { DEMO_PGN, parseGame } from '../src/chess/game'
+import { showPlayedPosition } from './helpers/review'
 
 test('real local analysis, legal alternatives, key moments, playback and export work under a subpath', async ({ page }, testInfo) => {
   const errors: string[] = []
@@ -9,6 +10,7 @@ test('real local analysis, legal alternatives, key moments, playback and export 
   page.on('pageerror', (error) => errors.push(error.message))
   page.on('request', (request) => requests.push(request.url()))
   await page.goto('./')
+  await showPlayedPosition(page)
   await expect(page.getByRole('heading', { name: 'Good games teach. Every game can.' })).toBeVisible()
   await expect(page.getByRole('progressbar', { name: 'Game analysis progress' })).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
   await expect(page.locator('.engine-error')).toHaveCount(0)
@@ -74,6 +76,7 @@ test('import validation, replacement during search, Black-first FEN, and promoti
   await expect(page.getByRole('alert')).toContainText("couldn't read this game")
   await textbox.fill('[SetUp "1"]\n[FEN "4k3/8/8/8/8/8/8/R3K3 b Q - 0 17"]\n[White "Local student"]\n\n17... Kf7 18. O-O-O *')
   await page.getByRole('button', { name: 'Review this game' }).click()
+  await showPlayedPosition(page)
   await expect(page.getByRole('dialog', { name: 'Every game has something to teach.' })).not.toBeVisible()
   await expect(page.locator('.board-caption')).toContainText('17... Kf7')
   await expect(page.locator('.move-cell')).toHaveCount(2)
@@ -86,6 +89,7 @@ test('import validation, replacement during search, Black-first FEN, and promoti
   await page.getByRole('button', { name: 'Import a game' }).click()
   await textbox.fill('[SetUp "1"]\n[FEN "7k/P7/8/8/8/8/8/7K w - - 0 1"]\n\n1. a8=N *')
   await page.getByRole('button', { name: 'Review this game' }).click()
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
   await expect(page.locator('.board-caption')).toContainText('insufficient material')
   await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', /N6k/)
@@ -113,6 +117,7 @@ test('engine failures stay visible, can be retried, and the mobile layout stays 
   await page.getByRole('button', { name: 'Import a game' }).click()
   await page.getByRole('textbox', { name: 'Your game in PGN format' }).fill('1. f3 e5 2. g4 Qh4# 0-1')
   await page.getByRole('button', { name: 'Review this game' }).click()
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
   await page.getByRole('button', { name: 'Last position' }).click()
   await expect(page.locator('.board-caption')).toContainText('Black wins by checkmate')
@@ -144,6 +149,7 @@ test('the entire app reloads and analyzes a new game with all network access dis
   await page.getByRole('button', { name: 'Import a game' }).click()
   await page.getByRole('textbox', { name: 'Your game in PGN format' }).fill('[White "Offline student"]\n[Black "Local engine"]\n\n1. f3 e5 2. g4 Qh4# 0-1')
   await page.getByRole('button', { name: 'Review this game' }).click()
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
   await page.getByLabel('Review depth').selectOption('deep')
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })

@@ -2,6 +2,10 @@ import { Chess } from 'chess.js'
 import type { Square } from 'chess.js'
 import type { ParsedGame, PieceMotion } from './types'
 
+export function reviewPositionIndex(selectedPly: number, beforeMove: boolean): number {
+  return beforeMove ? Math.max(0, selectedPly - 1) : selectedPly
+}
+
 export function fastReplayInterval(distance: number): number {
   if (!Number.isInteger(distance) || distance < 1) throw new Error('A replay must contain at least one move.')
   return Math.max(40, Math.min(110, Math.round(1200 / distance)))

@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test'
 import { Chess } from 'chess.js'
 import { readFile } from 'node:fs/promises'
 import { DEMO_PGN, parseGame } from '../src/chess/game'
+import { showPlayedPosition } from './helpers/review'
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
 
@@ -42,6 +43,7 @@ for (const viewport of [
     page.on('pageerror', (error) => errors.push(error.message))
     await page.setViewportSize(viewport)
     await page.goto('./')
+    await showPlayedPosition(page)
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
     const originalBoard = await expectCompactViewport(page, viewport.minimumBoard)
     await page.locator('.phone-panel-coach').evaluate((panel) => { panel.scrollTop = panel.scrollHeight })
@@ -72,6 +74,7 @@ for (const viewport of [
 
 test('moves, chart, key moments, keyboard tabs, and export stay available beside the visible board', async ({ page }) => {
   await page.goto('./')
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
   await page.getByRole('tab', { name: 'Moves', exact: true }).tap()
   await expect(page.locator('.move-cell')).toHaveCount(33)
@@ -107,6 +110,7 @@ test('moves, chart, key moments, keyboard tabs, and export stay available beside
 
 test('rotating a phone and returning to desktop retain the same analysis and alternate position', async ({ page }, testInfo) => {
   await page.goto('./')
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
   await page.getByRole('button', { name: /^Explore best alternative/ }).tap()
   await page.getByRole('button', { name: 'Next move', exact: true }).tap()
@@ -136,6 +140,7 @@ test('compact phone review and visible line exploration work after an offline re
   await page.getByRole('button', { name: 'Import a game' }).tap()
   await page.getByRole('textbox', { name: 'Your game in PGN format' }).fill('1. f3 e5 2. g4 Qh4# 0-1')
   await page.getByRole('button', { name: 'Review this game' }).tap()
+  await showPlayedPosition(page)
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
   await page.getByRole('button', { name: 'Last position' }).tap()
   await page.getByRole('button', { name: /^Explore best alternative/ }).tap()

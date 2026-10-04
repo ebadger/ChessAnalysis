@@ -65,7 +65,7 @@ function squarePoint(square: Square, flipped: boolean) {
 }
 
 export function Chessboard({
-  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation, showEvaluation = true, interaction, motion,
+  fen, flipped, lastMove, arrows = [], highlighted = [], evaluation, showEvaluation = true, interaction, motion, recommendedFrom,
 }: {
   fen: string
   flipped: boolean
@@ -75,6 +75,7 @@ export function Chessboard({
   evaluation?: Evaluation
   showEvaluation?: boolean
   motion?: BoardMotion | null
+  recommendedFrom?: Square
   interaction?: {
     enabled: boolean
     selected: Square | null
@@ -121,7 +122,7 @@ export function Chessboard({
         <div className="eval-white" style={{ height: `${whiteShare}%` }} />
         <span className={`eval-number${evaluation && evaluation.cp < 0 ? ' eval-negative' : ''}`}>{formatEvaluation(evaluation)}</span>
       </div>}
-      <div className="chessboard" role={interaction ? 'grid' : 'img'} aria-label={`Chessboard. ${colorName(chess.turn())} to move. ${flipped ? 'Black' : 'White'} at the bottom.${interaction ? ' Select a piece, then a highlighted destination. Arrow keys navigate squares; Enter selects.' : ` ${description}`}`} data-fen={fen}>
+      <div className="chessboard" role={interaction ? 'grid' : 'img'} aria-label={`Chessboard. ${colorName(chess.turn())} to move. ${flipped ? 'Black' : 'White'} at the bottom.${recommendedFrom ? ` Recommended piece on ${recommendedFrom}.` : ''}${interaction ? ' Select a piece, then a highlighted destination. Arrow keys navigate squares; Enter selects.' : ` ${description}`}`} data-fen={fen}>
         {[...ranks].map((rank, row) => <div className="board-rank" key={rank} role={interaction ? 'row' : undefined}>{[...files].map((file, col) => {
           const square = `${file}${rank}` as Square
           const piece = chess.get(square)
@@ -131,7 +132,7 @@ export function Chessboard({
           const selected = interaction?.selected === square
           const legal = interaction?.destinations.includes(square)
           const arriving = motion?.pieces.some((moving) => moving.to === square)
-          const className = `board-square ${dark ? 'square-dark' : 'square-light'}${last ? ' square-last' : ''}${highlighted.includes(square) ? ' square-tactic' : ''}${checked ? ' square-check' : ''}${selected ? ' square-selected' : ''}`
+          const className = `board-square ${dark ? 'square-dark' : 'square-light'}${last ? ' square-last' : ''}${highlighted.includes(square) ? ' square-tactic' : ''}${checked ? ' square-check' : ''}${selected ? ' square-selected' : ''}${recommendedFrom === square ? ' square-recommended' : ''}`
           const contents = <>
               {piece && (arriving && motion
                 ? <div key={`${motion.id}-${square}`} className="piece-arriving" style={{ animationDuration: `${motion.duration}ms` }}><ChessPiece type={piece.type} color={piece.color} /></div>
@@ -162,11 +163,19 @@ export function Chessboard({
             const dy = to.y - from.y
             const length = Math.hypot(dx, dy)
             if (length === 0) return null
-            const end = { x: to.x - dx / length * 8, y: to.y - dy / length * 8 }
+            let nx = -dy / length
+            let ny = dx / length
+            if (nx < 0 || (nx === 0 && ny < 0)) { nx = -nx; ny = -ny }
+            const start = { x: from.x + nx * (arrow.offset ?? 0), y: from.y + ny * (arrow.offset ?? 0) }
+            const end = { x: to.x + nx * (arrow.offset ?? 0) - dx / length * 8, y: to.y + ny * (arrow.offset ?? 0) - dy / length * 8 }
+            const control = { x: (start.x + end.x) / 2 + nx * (arrow.bend ?? 0), y: (start.y + end.y) / 2 + ny * (arrow.bend ?? 0) }
+            const path = arrow.bend
+              ? `M${start.x},${start.y} Q${control.x},${control.y} ${end.x},${end.y}`
+              : `M${start.x},${start.y} L${end.x},${end.y}`
             const tone = arrow.tone ?? 'sage'
-            return <g key={`${arrow.from}-${arrow.to}-${index}`} opacity=".83">
-              <circle cx={from.x} cy={from.y} r="14" className={`arrow-fill-${tone}`} />
-              <path d={`M${from.x},${from.y} L${end.x},${end.y}`} fill="none" strokeWidth="16" strokeLinecap="round" className={`arrow-stroke-${tone}`} markerEnd={`url(#${markerId}-${tone})`} />
+            return <g key={`${arrow.from}-${arrow.to}-${index}`} opacity=".88" data-arrow-from={arrow.from} data-arrow-to={arrow.to} data-arrow-tone={tone}>
+              <circle cx={start.x} cy={start.y} r="11" fill={arrow.dashed ? 'none' : undefined} strokeWidth={arrow.dashed ? 4 : undefined} className={`arrow-${arrow.dashed ? 'stroke' : 'fill'}-${tone}`} />
+              <path d={path} fill="none" strokeWidth="16" strokeDasharray={arrow.dashed ? '22 16' : undefined} strokeLinecap="round" className={`arrow-stroke-${tone}`} markerEnd={`url(#${markerId}-${tone})`} />
             </g>
           })}
         </svg>

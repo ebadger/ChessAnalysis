@@ -17,8 +17,8 @@ export function EvaluationGraph({
   const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')
   const selected = points[selectedPly]
   return (
-    <section className="evaluation-graph panel" aria-label="Game evaluation timeline">
-      <div className="graph-heading"><span><TrendingUp size={15} /> The shape of your game</span><small>White's perspective</small></div>
+    <section className="evaluation-graph panel" aria-label="Game evaluation timeline, White's perspective" title="Actual game evaluations after each played move, from White's perspective.">
+      <div className="graph-heading"><span><TrendingUp size={15} /> The shape of your game</span><small>After each move</small></div>
       <div className="graph-plot">
         <svg viewBox="0 0 600 84" preserveAspectRatio="none" aria-hidden="true">
           <defs><linearGradient id="graph-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--chart-fill, #a98fba)" stopOpacity=".26" /><stop offset="100%" stopColor="var(--chart-fill, #a98fba)" stopOpacity=".03" /></linearGradient></defs>

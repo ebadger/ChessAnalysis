@@ -169,6 +169,20 @@ h1 span { color: #8a738f; }
 .board-topline { display: flex; align-items: center; justify-content: space-between; padding: 0 0 8px 24px; font-size: 12px; color: #816c8e; }
 .board-topline > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .board-topline > .icon-button { height: 20px; width: 24px; color: #aaa1af; }
+.board-tools { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.board-tools > .icon-button { height: 25px; width: 26px; }
+.board-tools > .comparison-toggle { width: auto; padding: 3px 7px; gap: 5px; font-size: 10px; }
+.comparison-toggle[aria-pressed="true"] { background: var(--plum-soft); box-shadow: inset 0 0 0 1px var(--plum); color: var(--plum); }
+.comparison-legend { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 22px; margin: 5px 0 0 24px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.comparison-legend > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comparison-legend .comparison-position { flex-shrink: 0; }
+.comparison-legend .legend-best { color: var(--comparison-best-ink, #416d49); }
+.comparison-legend .legend-played { color: var(--comparison-played-ink, #995063); }
+.comparison-legend .legend-tactic { color: var(--gold-ink, #907235); }
+.legend-swatch { width: 13px; height: 0; border-top: 2px solid var(--comparison-best, #56875d); display: inline-block; flex-shrink: 0; }
+.legend-played .legend-swatch { border-top: 2px dashed var(--comparison-played, #b96573); }
+.arrows-hidden .legend-swatch { opacity: .35; }
+.square-recommended { box-shadow: inset 0 0 0 3px var(--recommended-ring, #6d9a57); }
 .game-year { color: #907b9b; }
 .player-row { display: flex; align-items: center; gap: 9px; padding: 5px 0 11px 24px; min-width: 0; }
 .board-frame + .player-row { padding-top: 12px; padding-bottom: 12px; }
@@ -810,7 +824,7 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 
 body:has(.phone-review-app) { overflow: hidden; }
 .phone-review-app {
-  --phone-board-size: max(120px, min(calc(100vw - 40px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 370px - env(safe-area-inset-top) - env(safe-area-inset-bottom))));
+  --phone-board-size: max(120px, min(calc(100vw - 40px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 386px - env(safe-area-inset-top) - env(safe-area-inset-bottom))));
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -846,8 +860,13 @@ body:has(.phone-review-app) { overflow: hidden; }
 .phone-review-app .phone-offline-indicator { margin: 0; padding: 0; display: grid; place-items: center; width: 16px; height: 22px; }
 .phone-review-app .analysis-progress { height: 2px; }
 .phone-review-workspace { flex: 1; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
-.phone-board { display: grid; grid-template-rows: 28px var(--phone-board-size) 42px; gap: 4px; min-width: 0; min-height: 0; }
+.phone-board { display: grid; grid-template-rows: 44px var(--phone-board-size) 42px; gap: 4px; min-width: 0; min-height: 0; }
+.phone-board-header { min-width: 0; height: 44px; }
 .phone-board-heading { display: flex; align-items: center; gap: 3px; min-width: 0; height: 28px; }
+.phone-review-app .comparison-toggle > span { display: none; }
+.phone-review-app .comparison-legend { height: 16px; min-height: 16px; margin: 0; gap: 7px; font-size: 9px; overflow: hidden; }
+.phone-review-app .comparison-legend > span { gap: 3px; }
+.phone-review-app .legend-swatch { width: 10px; }
 .phone-review-app .phone-board-heading .board-caption { flex: 1; min-width: 0; min-height: 26px; height: 26px; padding: 3px 6px; margin: 0; gap: 5px; font-size: 10px; border-radius: 5px; }
 .phone-review-app .phone-board-heading .board-caption > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .phone-review-app .phone-board-heading .icon-button { width: 28px; height: 28px; }
@@ -955,14 +974,15 @@ body:has(.phone-review-app) { overflow: hidden; }
 .phone-review-app .site-footer { display: none; }
 
 @media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
-  .phone-review-app { --phone-board-size: max(120px, min(calc(50vw - 36px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))); }
+  .phone-review-app { --phone-board-size: max(120px, min(calc(50vw - 36px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 166px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))); }
   .phone-review-app .site-header { height: 36px; flex-basis: 36px; }
   .phone-review-app .page-shell { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 36px minmax(0, 1fr); gap: 4px 12px; }
   .phone-review-app #review-panel { display: contents; }
   .phone-review-app .workspace-mode-bar { grid-column: 1; grid-row: 1; height: 36px; padding: 2px 0; }
   .phone-review-app .review-status { grid-column: 2; grid-row: 1; margin: 4px 0; height: 28px; min-height: 28px; }
   .phone-review-workspace { grid-column: 1 / -1; grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; }
-  .phone-board { grid-template-rows: 24px var(--phone-board-size) 36px; gap: 2px; }
+  .phone-board { grid-template-rows: 40px var(--phone-board-size) 36px; gap: 2px; }
+  .phone-board-header { height: 40px; }
   .phone-board-heading { height: 24px; }
   .phone-review-app .phone-board-heading .board-caption { height: 24px; min-height: 24px; font-size: 9px; }
   .phone-review-app .phone-board-heading .icon-button { height: 24px; width: 24px; }

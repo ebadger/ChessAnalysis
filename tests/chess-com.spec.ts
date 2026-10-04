@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { Route } from '@playwright/test'
 import { archivesFixture, gameFixture } from './fixtures/chessCom'
+import { showPlayedPosition } from './helpers/review'
 
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, colorScheme: 'dark' })
 
@@ -51,6 +52,7 @@ test('lookup is opt-in, exposes old months and every game page, and imports a se
   await page.getByRole('tab', { name: 'Paste PGN', exact: true }).tap()
   await page.getByRole('textbox', { name: 'Your game in PGN format' }).fill('1. f3 e5 2. g4 Qh4# 0-1')
   await page.getByRole('button', { name: 'Review this game' }).tap()
+  await showPlayedPosition(page)
   await page.getByRole('button', { name: 'Last position' }).tap()
   await expect(page.locator('.board-caption')).toContainText('Black wins by checkmate')
   expect(calls).toHaveLength(4)

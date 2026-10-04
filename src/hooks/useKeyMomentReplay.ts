@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { moveLabel } from '../chess/game'
-import { fastReplayInterval } from '../chess/navigation'
+import { fastReplayInterval, reviewPositionIndex } from '../chess/navigation'
 import type { ParsedGame } from '../chess/types'
 
 interface Journey {
   game: ParsedGame
   startPly: number
   targetPly: number
+  startPosition: number
+  targetPosition: number
+  beforeMove: boolean
 }
 
 interface ReplayFrame {
@@ -17,7 +20,7 @@ interface ReplayFrame {
   duration: number
 }
 
-export function useKeyMomentReplay(game: ParsedGame, selectedPly: number, onSelect: (ply: number) => void, enabled: boolean) {
+export function useKeyMomentReplay(game: ParsedGame, selectedPly: number, onSelect: (ply: number) => void, enabled: boolean, beforeMove = false) {
   const [journey, setJourney] = useState<Journey | null>(null)
   const [transition, setTransition] = useState<ReplayFrame | null>(null)
   const [announcement, setAnnouncement] = useState('')
@@ -52,13 +55,13 @@ export function useKeyMomentReplay(game: ParsedGame, selectedPly: number, onSele
     onSelect(destination.targetPly)
     setJourney(null)
     setTransition(null)
-    setAnnouncement(`Arrived at ${destination.targetPly === 0 ? 'the starting position' : moveLabel(destination.game.moves[destination.targetPly - 1])}.`)
+    setAnnouncement(`Arrived at ${destination.targetPly === 0 ? 'the starting position' : `${destination.beforeMove ? 'the position before ' : ''}${moveLabel(destination.game.moves[destination.targetPly - 1])}`}.`)
   }, [clearFrame, onSelect])
 
   useLayoutEffect(() => {
     cancel()
     return clearFrame
-  }, [game, enabled, cancel, clearFrame])
+  }, [game, enabled, beforeMove, cancel, clearFrame])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -74,16 +77,18 @@ export function useKeyMomentReplay(game: ParsedGame, selectedPly: number, onSele
       throw new Error('The requested key moment is outside this game.')
     }
     const startPly = currentPly.current
-    const label = targetPly ? moveLabel(game.moves[targetPly - 1]) : 'the starting position'
-    if (startPly === targetPly || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const startPosition = reviewPositionIndex(startPly, beforeMove)
+    const targetPosition = reviewPositionIndex(targetPly, beforeMove)
+    const label = targetPly ? `${beforeMove ? 'the position before ' : ''}${moveLabel(game.moves[targetPly - 1])}` : 'the starting position'
+    if (startPosition === targetPosition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       currentPly.current = targetPly
       onSelect(targetPly)
       setAnnouncement(`Arrived at ${label}.`)
       return
     }
-    const destination: Journey = { game, startPly, targetPly }
-    const direction = Math.sign(targetPly - startPly)
-    const interval = fastReplayInterval(Math.abs(targetPly - startPly))
+    const destination: Journey = { game, startPly, targetPly, startPosition, targetPosition, beforeMove }
+    const direction = Math.sign(targetPosition - startPosition)
+    const interval = fastReplayInterval(Math.abs(targetPosition - startPosition))
     const duration = Math.round(interval * .8)
     const ticket = generation.current
     let lastStep = performance.now()
@@ -97,19 +102,20 @@ export function useKeyMomentReplay(game: ParsedGame, selectedPly: number, onSele
       if (settlingUntil !== null) {
         if (now >= settlingUntil) { finish(); return }
       } else if (now - lastStep >= interval) {
-        const fromPly = currentPly.current
+        const fromPly = reviewPositionIndex(currentPly.current, beforeMove)
         const toPly = fromPly + direction
-        currentPly.current = toPly
+        const selection = toPly === targetPosition ? targetPly : beforeMove ? toPly + 1 : toPly
+        currentPly.current = selection
         setTransition({ game, id: ++motionId.current, fromPly, toPly, duration })
-        onSelect(toPly)
+        onSelect(selection)
         lastStep = now
-        if (toPly === targetPly) settlingUntil = now + duration
+        if (toPly === targetPosition) settlingUntil = now + duration
       }
       // Advance at most one position per frame; a slow device must not skip intervening moves.
       frame.current = window.requestAnimationFrame(tick)
     }
     frame.current = window.requestAnimationFrame(tick)
-  }, [cancel, enabled, game, onSelect, finish])
+  }, [cancel, enabled, game, onSelect, finish, beforeMove])
 
   return { journey, transition, announcement, go, cancel, finish }
 }
