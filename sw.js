@@ -1,7 +1,7 @@
-const VERSION = "bc5c9c1f24f2cfa5";
+const VERSION = "3b9931e5ab2cb9a0";
 const ASSETS = [
-  "assets/index-DDSyza6u.css",
-  "assets/index-n7HR6zw7.js",
+  "assets/index-DKdoeQ8d.css",
+  "assets/index-Djy8RQWb.js",
   "engine/COPYING.txt",
   "engine/stockfish-17.1-lite-single-03e3232.js",
   "engine/stockfish-17.1-lite-single-03e3232.wasm",
