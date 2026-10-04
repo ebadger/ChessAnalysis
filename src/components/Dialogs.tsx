@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, BookOpen, FileUp, Flower2, Globe, LockKeyhole, Upload, X } from 'lucide-react'
+import { ArrowRight, BookOpen, Download, FileUp, Flower2, Globe, LockKeyhole, RefreshCw, Upload, X } from 'lucide-react'
 import { CLASSIFICATIONS, isKeyClassification } from '../chess/analysis'
 import { DEMO_PGN, FORK_PGN, parseGame } from '../chess/game'
 import type { Classification, ParsedGame } from '../chess/types'
 import type { ThemePreference } from '../hooks/useTheme'
+import type { AppUpdateControls } from '../appUpdates'
 import { GradeBadge } from './MoveList'
 import { ChessComBrowser } from './ChessComBrowser'
 
@@ -88,20 +89,34 @@ export function ImportDialog({ open, onClose, onImport }: {
   )
 }
 
-export function GuideDialog({ open, onClose, themePreference, onThemeChange, themeWarning }: {
+export function GuideDialog({ open, onClose, themePreference, onThemeChange, themeWarning, updates, onSaveStudy, onSaveBotGame }: {
   open: boolean
   onClose: () => void
   themePreference: ThemePreference
   onThemeChange: (preference: ThemePreference) => void
   themeWarning: string | null
+  updates: AppUpdateControls
+  onSaveStudy: () => void
+  onSaveBotGame?: () => void
 }) {
   const dialog = useDialog(open, onClose)
+  const updateBusy = updates.state.status === 'checking' || updates.state.status === 'reloading'
   return (
     <dialog {...dialog} className="app-dialog guide-dialog" aria-labelledby="guide-title">
       <div className="dialog-heading"><span className="dialog-flower"><BookOpen size={24} /></span><button className="icon-button" aria-label="Close study guide" onClick={onClose}><X size={20} /></button></div>
       <span className="eyebrow">A THOUGHTFUL WAY TO REVIEW</span>
       <h2 id="guide-title">Understanding your study companion.</h2>
       <div className="guide-content">
+        <section className="app-updates" aria-label="App updates">
+          <div className="app-update-heading"><h3>App updates</h3><code title={updates.currentVersion ?? (import.meta.env.PROD ? 'Missing build identifier' : 'Development build')}>Build {updates.currentVersion?.slice(0, 8) ?? (import.meta.env.PROD ? 'unknown' : 'development')}</code></div>
+          <p className={`app-update-message update-${updates.state.status}`} role="status">{updates.state.message}</p>
+          <div className="app-update-actions">
+            <button className="secondary-button" disabled={!updates.enabled || updateBusy} onClick={() => { void updates.check() }}><RefreshCw size={14} /> Check for updates</button>
+            <button className="primary-button" disabled={!updates.enabled || updateBusy} onClick={() => { void updates.reload() }}><RefreshCw size={14} /> Reload app</button>
+          </div>
+          <p className="reload-warning">Reloading resets the in-memory study and bot match. Save any game you want to keep first. Updates never reload an active game automatically.</p>
+          <div className="update-save-actions"><button className="text-button" onClick={onSaveStudy}><Download size={13} /> Save study PGN</button>{onSaveBotGame && <button className="text-button" onClick={onSaveBotGame}><Download size={13} /> Save bot game PGN</button>}</div>
+        </section>
         <h3>Make yourself comfortable</h3>
         <div className="theme-options" role="group" aria-label="Color theme">
           {(['system', 'light', 'dark'] as const).map((preference) => <button key={preference} aria-pressed={themePreference === preference} onClick={() => onThemeChange(preference)}>{preference === 'system' ? 'Follow device' : preference === 'light' ? 'Light' : 'Dark'}</button>)}

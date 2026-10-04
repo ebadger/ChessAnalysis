@@ -12,6 +12,7 @@ import { colorName, DEMO_PGN, downloadPgn, exportAnnotatedPgn, formatEvaluation,
 import { detectTactics } from './chess/tactics'
 import { replayPieceMotions, reviewPositionIndex } from './chess/navigation'
 import { compareSelectedMove } from './chess/comparison'
+import { matchPgn } from './chess/bots'
 import type { AnalysisMode, BoardArrow, EngineLine, ParsedGame, Tactic, Variation } from './chess/types'
 import { Badger } from './components/Badger'
 import { Chessboard, ChessPiece } from './components/Chessboard'
@@ -55,7 +56,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   const [journalTab, setJournalTab] = useState<'moves' | 'insights'>('moves')
   const [notice, setNotice] = useState<string | null>(null)
   const { status, analyses, positions, error, start, stop } = useAnalysis(game, mode, view === 'review')
-  const botGame = useBotGame(view === 'play')
+  const botGame = useBotGame(view === 'play' && !guideOpen)
   const offline = useOffline()
   const keyReplay = useKeyMomentReplay(game, selectedPly, setSelectedPly, view === 'review', compareMoves)
   const replayJourney = keyReplay.journey?.game === game && view === 'review' ? keyReplay.journey : null
@@ -239,6 +240,14 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     downloadPgn(exportAnnotatedPgn(game, analyses), 'badger-flores-study.pgn')
     setNotice('Your annotated PGN is ready to keep and revisit.')
   }
+  const exportBotGame = () => {
+    if (!botGame.match || !botGame.match.moves.length) {
+      setNotice('There are no bot moves to save yet.')
+      return
+    }
+    downloadPgn(matchPgn(botGame.match), 'badger-flores-practice.pgn')
+    setNotice('Your bot game is ready to keep before reloading.')
+  }
 
   const arrows: BoardArrow[] = []
   if (hints && !replaying && activeTactic) arrows.push(...activeTactic.arrows)
@@ -327,7 +336,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
         </a>
         <nav className="header-actions" aria-label="Main navigation">
           <span className="privacy-label" title={offline.message}>{offline.status === 'ready' ? <CloudOff size={15} /> : <ShieldCheck size={15} />}{offline.status === 'ready' ? 'Works offline' : 'Private by nature'}</span>
-          <button className="header-guide" aria-label={phoneReview ? 'About the coach & analysis' : undefined} title="The study guide" onClick={openGuide}><BookOpen size={16} /><span>The study guide</span></button>
+          <button className="header-guide" aria-label={phoneReview ? 'About the coach & analysis' : undefined} title={offline.updates.state.status === 'available' ? 'An app update is available. Open the guide to reload safely.' : 'The study guide'} onClick={openGuide}><BookOpen size={16} /><span>The study guide</span>{offline.updates.state.status === 'available' && <i className="app-update-dot" aria-hidden="true" />}</button>
           <button className="primary-button import-button" onClick={openImport}><Upload size={16} /> Import a game</button>
         </nav>
       </header>
@@ -451,7 +460,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
         <footer className="site-footer"><span><Flower2 size={15} /> Made for curious minds and growing games.</span><button className="text-button" onClick={openGuide}>About the coach & analysis <ArrowUpRight size={13} /></button></footer>
       </main>
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importGame} />
-      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} themePreference={theme.preference} onThemeChange={theme.setPreference} themeWarning={theme.warning} />
+      <GuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} themePreference={theme.preference} onThemeChange={theme.setPreference} themeWarning={theme.warning} updates={offline.updates} onSaveStudy={exportGame} onSaveBotGame={botGame.match?.moves.length ? exportBotGame : undefined} />
       <CategoryDialog open={categoriesOpen} onClose={() => setCategoriesOpen(false)} />
       {notice && <div className="toast" role="status"><Info size={16} />{notice}<button className="icon-button" aria-label="Dismiss notification" onClick={() => setNotice(null)}><X size={15} /></button></div>}
       <span className="sr-only" role="status">{view === 'review' && status === 'complete' ? `Analysis complete. ${criticalPlies.length} key moments found.` : ''}</span>

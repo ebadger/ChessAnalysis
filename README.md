@@ -32,7 +32,17 @@ npm run deploy
 
 This rebuilds the self-contained site and publishes only the generated files to the `gh-pages` branch, with a `.nojekyll` marker. It does not switch or overwrite your source branch. Git push access to this repository is required. The publishing dependency is development-only and is not part of the web app.
 
-In the repository's **Settings > Pages**, the source is **Deploy from a branch**, branch **gh-pages**, folder **/ (root)**. The repository is public to support Pages on GitHub Free. GitHub may take a minute or two to publish an update. On a phone, open the live URL and wait for **Available offline** before disconnecting. Close existing site tabs and reopen after a deployment to allow a waiting offline-cache update to activate.
+In the repository's **Settings > Pages**, the source is **Deploy from a branch**, branch **gh-pages**, folder **/ (root)**. The repository is public to support Pages on GitHub Free. GitHub may take a minute or two to publish an update. On a phone, open the live URL and wait for **Available offline** before disconnecting.
+
+### Refreshing after an update
+
+A normal online reload requests fresh HTML rather than always reusing the offline page. In **The study guide > App updates** (the book button on phones), you can see the current build, **Check for updates**, and **Reload app** with a cache-busted request. A dot on the guide button marks an available update. Checks are explicit; there is no periodic polling.
+
+Reloading resets the in-memory study and bot match. The update panel warns about this and offers **Save study PGN** and, when a match has moves, **Save bot game PGN** before reloading. Opening the guide pauses bot thinking so its exported position stays stable. An update never automatically reloads an active game.
+
+If an older installed copy still keeps showing the old page, save your game first, then open **https://ebadger.github.io/ChessAnalysis/refresh.html**. This recovery entry bypasses the older cache-first page; future updates can use the in-app controls or an ordinary refresh. No manual site-data clearing is needed.
+
+Each production build has a content-derived identifier in its HTML, `build.json`, and worker. HTML/version requests use cache-busting query parameters, bundled JS/CSS retain hashed filenames, and worker registration uses a versioned URL with browser-cache bypassing. The new worker activates only after its complete matching offline copy has been saved; it does not navigate existing tabs. Older assets remain cached while an older or unresponsive tab may still need them and are pruned conservatively once all scoped clients use the current version. Deploy the complete output together, including `build.json`, `refresh.html`, and `sw.js`.
 
 ## Self-contained and offline
 
@@ -42,7 +52,9 @@ The production build generates a versioned service worker that precaches the com
 
 The first load must obtain the files from the static host. For an entirely disconnected setup, copy the already-built `dist` directory to the device and serve it with any installed local static HTTP server. No npm or internet access is needed to **run that built copy**. Dependency installation is a build-time step only.
 
-Offline storage requires HTTPS or localhost and service-worker support. The cache contains only app assets, never PGNs. The appearance preference is saved separately in local storage; imported games, usernames, and game lists are held only in memory. Clearing browser site data or browser cache eviction removes the offline copy. A later connected visit can save it again. Browsers can check for updated service workers when connected; new versions activate after existing tabs close, so an active study is not replaced underneath the student. Caches are scoped to the deployment path so separate installs do not delete each other's data.
+Offline storage requires HTTPS or localhost and service-worker support. The cache contains only app assets, never PGNs. The appearance preference is saved separately in local storage; imported games, usernames, and game lists are held only in memory. Clearing browser site data or browser cache eviction removes the offline copy. A later connected visit can save it again. Browsers can also discover updated workers during their normal lifecycle; activation preserves open studies and announces the update to current app clients. Caches are scoped to the deployment path so separate installs do not delete each other's data.
+
+When offline, navigation uses the saved page immediately. If an online navigation fails or takes too long, it falls back to the saved copy. Update-check or offline-save errors stay visible and leave the current study alone; they do not falsely report that a failed check is up to date.
 
 `npm run dev` does not install a service worker; use a production build with `npm run preview` to exercise offline mode. The default dev and preview ports are different to avoid a saved production worker intercepting development files. Optional reference/source links in the guide require the internet only if deliberately opened; the license itself is cached locally.
 
@@ -157,7 +169,7 @@ npm run build
 npm run test:browser
 ```
 
-If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, every bot level, takebacks, color choice, bot-game-to-review transfer, and fresh offline play/analysis after a full reload. Phone review checks measure board/panel bounds at 320x568, 360x640, and 390x844, ensure scrolling explanations never scrolls the board away, and cover landscape/desktop transitions. Theme checks cover device changes, saved preferences, blocked storage, dark contrast, and offline use. Mocked API cases cover opt-in Chess.com lookup, complete archive access, paging, variant handling, selection, and error/retry behavior without making tests depend on a third-party service. Unit tests also cover API validation and cancellation.
+If Playwright reports a missing browser, run `npx playwright install chromium`, then retry. Browser tests serve the **production build under `/study/`** and exercise the real WebAssembly engine, PGN import/validation, alternate lines, keyboard controls, critical jumps, export, failure/retry, cancellation, every bot level, takebacks, color choice, bot-game-to-review transfer, and fresh offline play/analysis after a full reload. Phone review checks measure board/panel bounds at 320x568, 360x640, and 390x844, ensure scrolling explanations never scrolls the board away, and cover landscape/desktop transitions. Theme checks cover device changes, saved preferences, blocked storage, dark contrast, and offline use. Mocked API cases cover opt-in Chess.com lookup, complete archive access, paging, variant handling, selection, and error/retry behavior without making tests depend on a third-party service. Update tests serve successive releases with aggressively cached HTTP responses, exercise legacy recovery, preserve old-tab assets and games, verify explicit/ordinary refresh and offline fallback, and reject incomplete updates. Unit tests also cover API/update validation, timeouts, and cancellation.
 
 ## Engine licensing and references
 

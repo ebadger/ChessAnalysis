@@ -69,6 +69,8 @@ h1, h2, h3, p { margin: 0; }
 .privacy-label svg { color: #8d9c80; }
 .header-guide { font-size: 12px; display: inline-flex; align-items: center; gap: 7px; color: #716b77; padding: 6px 0; }
 .header-guide:hover { color: var(--plum); }
+.header-guide { position: relative; }
+.app-update-dot { position: absolute; top: 0; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--sage); box-shadow: 0 0 0 2px var(--paper); }
 .page-shell { max-width: 1248px; margin: 0 auto; padding: 0 32px; }
 .page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 29px 0 24px; }
 .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #807586; margin-bottom: 12px; }
@@ -440,6 +442,17 @@ textarea[aria-invalid="true"] { border-color: #d69b9b; }
 .guide-content h3 { font-size: 14px; color: #816291; margin: 24px 0 9px; font-weight: 600; }
 .guide-content p { margin-bottom: 9px; }
 .guide-content a { color: #9571a9; }
+.app-updates { padding: 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--plum-soft); margin-top: 16px; }
+.app-update-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.guide-content .app-update-heading h3 { margin: 0; color: var(--ink); font-size: 13px; }
+.app-update-heading code { color: var(--muted); font-size: 9px; white-space: nowrap; }
+.app-update-message { margin: 9px 0 11px; font-size: 11px; line-height: 1.6; color: var(--ink); }
+.app-update-message.update-error { color: var(--blunder-ink, #a65160); }
+.app-update-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.app-update-actions > button { flex: 1; min-height: 44px; font-size: 11px; padding: 8px; gap: 5px; }
+.guide-content .reload-warning { font-size: 10px; line-height: 1.6; margin: 11px 0 6px; color: var(--muted); }
+.update-save-actions { display: flex; flex-wrap: wrap; gap: 7px 16px; }
+.update-save-actions > button { min-height: 44px; font-size: 11px; }
 .grade-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
 .grade-guide > div { display: flex; align-items: flex-start; gap: 10px; border: 1px solid #ece5f0; border-radius: 8px; padding: 12px; background: #fdfafe; }
 .grade-guide strong { font-weight: 600; font-size: 11px; color: #8c739b; }
