@@ -1,7 +1,7 @@
-const VERSION = "1d131812cbca6cff";
+const VERSION = "700aef45595dd1ad";
 const ASSETS = [
+  "assets/index-C7kRpigk.js",
   "assets/index-CcOhI6N4.css",
-  "assets/index-Cy417HFZ.js",
   "engine/COPYING.txt",
   "engine/stockfish-17.1-lite-single-03e3232.js",
   "engine/stockfish-17.1-lite-single-03e3232.wasm",
@@ -11,13 +11,19 @@ const ASSETS = [
   "build.json"
 ];
 const SCOPE = self.registration.scope;
-const CACHE_PREFIX = 'badger-flores:' + SCOPE + ':';
+const CACHE_PREFIX = 'flores-badger:' + SCOPE + ':';
+// Older open tabs can still need assets cached before the app was renamed.
+const LEGACY_CACHE_PREFIX = 'badger-flores:' + SCOPE + ':';
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 const URLS = ASSETS.map((path) => new URL(path, SCOPE).href);
 const INDEX_URL = new URL('index.html', SCOPE).href;
 const BUILD_URL = new URL('build.json', SCOPE).href;
 // Static files do not vary by Origin; module and precache requests can carry different Origin headers.
 const MATCH_OPTIONS = { ignoreSearch: true, ignoreVary: true };
+
+function isAppCache(name) {
+  return name.startsWith(CACHE_PREFIX) || name.startsWith(LEGACY_CACHE_PREFIX);
+}
 
 async function saveOffline() {
   const files = await Promise.all(URLS.map(async (url) => {
@@ -68,7 +74,7 @@ async function pruneUnusedVersions() {
   if (versions.some((version) => version !== VERSION)) return;
   // An older worker must not remove a cache being prepared by a concurrent update.
   if (self.registration.active !== active || self.registration.installing || self.registration.waiting) return;
-  await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+  await Promise.all(names.filter((name) => isAppCache(name) && name !== CACHE_NAME)
     .map((name) => caches.delete(name)));
 }
 
@@ -76,7 +82,7 @@ async function cachedAsset(request) {
   const current = await (await caches.open(CACHE_NAME)).match(request, MATCH_OPTIONS);
   if (current) return current;
   const names = await caches.keys();
-  for (const name of names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)) {
+  for (const name of names.filter((name) => isAppCache(name) && name !== CACHE_NAME)) {
     const saved = await (await caches.open(name)).match(request, MATCH_OPTIONS);
     if (saved) return saved;
   }
