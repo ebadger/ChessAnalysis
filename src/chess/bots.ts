@@ -91,7 +91,7 @@ export function matchPgn(match: BotMatch): string {
   const chess = matchBoard(match)
   const bot = getBotLevel(match.levelId)
   const opponent = `${bot.name} (${bot.label})`
-  chess.setHeader('Event', 'Badger-Flores practice')
+  chess.setHeader('Event', 'Flores-Badger practice')
   chess.setHeader('Site', 'Local browser')
   chess.setHeader('Date', match.date)
   chess.setHeader('White', match.humanColor === 'w' ? 'You' : opponent)

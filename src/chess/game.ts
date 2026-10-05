@@ -169,7 +169,7 @@ export function evaluationPointLoss(analysis: Pick<MoveAnalysis, 'before' | 'aft
 export function exportAnnotatedPgn(game: ParsedGame, analyses: MoveAnalysis[]): string {
   const chess = new Chess(game.initialFen)
   for (const [key, value] of Object.entries(game.headers)) chess.setHeader(key, value)
-  chess.setHeader('Annotator', 'Badger-Flores / Stockfish 17.1 lite')
+  chess.setHeader('Annotator', 'Flores-Badger / Stockfish 17.1 lite')
   for (const move of game.moves) {
     chess.move(move.san)
     const analysis = analyses[move.ply - 1]

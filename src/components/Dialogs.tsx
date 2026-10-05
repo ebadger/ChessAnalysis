@@ -61,7 +61,7 @@ export function ImportDialog({ open, onClose, onImport }: {
       <div className="dialog-heading"><span className="dialog-flower"><Flower2 size={25} /></span><button className="icon-button" aria-label="Close import dialog" onClick={onClose}><X size={20} /></button></div>
       <span className="eyebrow">MAKE ROOM FOR A LITTLE GROWTH</span>
       <h2 id="import-title">Every game has something to teach.</h2>
-      <p className="dialog-intro">Paste a PGN from anywhere you play, or browse a Chess.com player's public games. Badger-Flores will help you find the ideas inside.</p>
+      <p className="dialog-intro">Paste a PGN from anywhere you play, or browse a Chess.com player's public games. Flores-Badger will help you find the ideas inside.</p>
       <div className="import-sources" role="tablist" aria-label="Game import source">
         <button role="tab" aria-selected={source === 'pgn'} onClick={() => setSource('pgn')}><FileUp size={15} /> Paste PGN</button>
         <button role="tab" aria-selected={source === 'chess-com'} onClick={() => setSource('chess-com')}><Globe size={15} /> Chess.com username</button>
@@ -154,7 +154,7 @@ export function GuideDialog({ open, onClose, themePreference, onThemeChange, the
         <p>In a production build, the app saves all its own files and the full local engine in an offline cache. Once "Available offline" appears, you can disconnect, reload, import new PGNs, play bots, and complete fresh analyses in either theme. Looking up another Chess.com account or month still requires a connection. Only app files are cached, not your games. Browser storage clearing or eviction removes the offline copy; reconnect to save it again.</p>
         <p>First-time loading still needs access to this static site. Alternatively, download the complete build and serve it on localhost: no internet connection is needed to run it. Offline saving requires HTTPS or localhost and a browser that permits service workers. Development mode deliberately does not cache files.</p>
         <h3>A family name, a little growth</h3>
-        <p>The Badger-Flores name and flower theme honor the family behind this study companion.</p>
+        <p>The Flores-Badger name and flower theme honor the family behind this study companion.</p>
         <h3>Open-source engine & references</h3>
         <p>The engine license is included in the offline copy. The optional source and reference links below open external websites only when you choose them; they are never needed for analysis.</p>
         <p><a href="https://github.com/nmrugg/stockfish.js/tree/v17.1.0" target="_blank" rel="noreferrer">Stockfish.js source</a> · <a href={`${import.meta.env.BASE_URL}engine/COPYING.txt`} target="_blank" rel="noreferrer">GNU GPL v3 engine license</a> · <a href="https://support.chess.com/en/articles/8572705-how-are-moves-classified-what-is-a-blunder-or-brilliant-etc" target="_blank" rel="noreferrer">Chess.com classification reference</a> · <a href="https://www.chessigma.com/" target="_blank" rel="noreferrer">Chessigma</a></p>

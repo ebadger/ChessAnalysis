@@ -68,7 +68,7 @@ describe('local bot practice games', () => {
     expect(() => appendMatchMove(match, 'a2a3', 'w')).toThrow('finished')
     const review = parseGame(matchPgn(match))
     expect(review.moves.map((move) => move.uci)).toEqual(match.moves)
-    expect(review.headers).toMatchObject({ White: 'You', Black: 'Oak (Expert)', Result: '0-1', BotSkill: '20' })
+    expect(review.headers).toMatchObject({ Event: 'Flores-Badger practice', White: 'You', Black: 'Oak (Expert)', Result: '0-1', BotSkill: '20' })
   })
 
   it('records resignation without adding a phantom move', () => {

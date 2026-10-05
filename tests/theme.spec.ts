@@ -34,20 +34,28 @@ async function noBrightPanels(page: Page) {
   expect(panels).toEqual([])
 }
 
-async function noBadgerCharacter(page: Page) {
+async function expectBranding(page: Page) {
   await expect(page.locator('.badger-art, .brand-character, .coach-portrait, .play-coach-portrait, .portrait-halo, .portrait-spark')).toHaveCount(0)
   await expect(page.getByRole('img', { name: /badger/i, includeHidden: true })).toHaveCount(0)
   await expect(page.locator('.brand')).toBeVisible()
+  await expect(page.locator('.brand')).toHaveAttribute('aria-label', 'Flores-Badger home')
+  await expect(page.locator('.brand strong')).toHaveText('Flores-Badger')
+  await expect(page.locator('body')).not.toContainText('Badger-Flores')
 }
 
 test('theme follows the device, remembers a manual choice, and can return to automatic', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('./')
+  await expect(page).toHaveTitle(/^Flores-Badger/)
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /Flores-Badger/)
+  const manifest = await page.request.get(new URL('manifest.webmanifest', page.url()).href)
+  expect(manifest.ok()).toBe(true)
+  expect(await manifest.json()).toMatchObject({ name: 'Flores-Badger Chess Coach', short_name: 'Flores-Badger', id: './', start_url: './' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.emulateMedia({ colorScheme: 'dark' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.getByRole('button', { name: 'Switch to light mode' }).click()
-  expect(await page.evaluate(() => localStorage.getItem('badger-flores-theme'))).toBe('light')
+  expect(await page.evaluate(() => localStorage.getItem('flores-badger-theme'))).toBe('light')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.getByRole('button', { name: 'The study guide' }).click()
@@ -56,16 +64,28 @@ test('theme follows the device, remembers a manual choice, and can return to aut
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#181b22')
 })
 
+test('the renamed app preserves an old saved theme and saves future choices under the new name', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.addInitScript(() => localStorage.setItem('badger-flores-theme', 'dark'))
+  await page.goto('./')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.locator('.toast')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Switch to light mode' }).click()
+  expect(await page.evaluate(() => localStorage.getItem('flores-badger-theme'))).toBe('light')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+})
+
 for (const viewport of [{ width: 1440, height: 1100 }, { width: 320, height: 568 }]) {
   test(`dark review, bot play, and dialogs are readable at ${viewport.width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport)
     await page.emulateMedia({ colorScheme: 'dark' })
     await page.goto('./')
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
-    await noBadgerCharacter(page)
+    await expectBranding(page)
     if (viewport.width > 700) {
       expect((await page.locator('.coach-heading').boundingBox())!.height).toBeLessThan(80)
-      await expect(page.locator('.coach-name')).toHaveText('Badger-Flores')
+      await expect(page.locator('.coach-name')).toHaveText('Flores-Badger')
     } else await expect(page.locator('.coach-heading')).toBeHidden()
     await checkContrast(page, '.coach-feedback > p')
     await checkContrast(page, '.best-alternative .alternative-main > strong')
@@ -80,17 +100,17 @@ for (const viewport of [{ width: 1440, height: 1100 }, { width: 320, height: 568
     await noBrightPanels(page)
     await page.getByRole('button', { name: 'Close import dialog' }).click()
     await page.getByRole('button', { name: viewport.width === 320 ? 'About the coach & analysis' : 'The study guide' }).click()
-    await expect(page.locator('.guide-content')).toContainText('The Badger-Flores name and flower theme honor the family')
+    await expect(page.locator('.guide-content')).toContainText('The Flores-Badger name and flower theme honor the family')
     await expect(page.locator('.guide-content')).not.toContainText('curiosity of a badger')
-    await noBadgerCharacter(page)
+    await expectBranding(page)
     await page.getByRole('button', { name: 'Close study guide' }).click()
     await page.getByRole('tab', { name: 'Play a bot' }).click()
-    await noBadgerCharacter(page)
+    await expectBranding(page)
     await noBrightPanels(page)
     await checkContrast(page, '.play-welcome-copy > h2')
     await page.screenshot({ path: testInfo.outputPath(`bot-setup-${viewport.width}.png`), fullPage: true })
     await page.getByRole('button', { name: 'Start game', exact: true }).click()
-    await noBadgerCharacter(page)
+    await expectBranding(page)
     expect((await page.locator('.play-coach-heading').boundingBox())!.height).toBeLessThan(70)
     await checkContrast(page, '.play-coach-card > p')
     await noBrightPanels(page)

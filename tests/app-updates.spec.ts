@@ -7,7 +7,8 @@ test('legacy recovery, safe activation, explicit reload, and normal refresh load
   const server = await releaseServer()
   const versionB = 'bbbbbbbbbbbbbbbb'
   const versionC = 'cccccccccccccccc'
-  const cachePrefix = `badger-flores:${server.url}:`
+  const cachePrefix = `flores-badger:${server.url}:`
+  const legacyCache = `badger-flores:${server.url}:${server.initialVersion}`
   try {
     await page.goto(server.url)
     await expect(page.locator('.offline-status')).toContainText('Available offline')
@@ -34,7 +35,8 @@ test('legacy recovery, safe activation, explicit reload, and normal refresh load
     await expect(page.locator('.app-update-dot')).toBeVisible()
     const legacyAsset = await page.evaluate(() => fetch('./legacy-only.txt', { cache: 'no-store' }).then((response) => response.text()))
     expect(legacyAsset).toBe('Retained for an older open tab.')
-    expect(await current.evaluate(() => caches.keys())).toContain(cachePrefix + server.initialVersion)
+    expect(await current.evaluate(() => caches.keys())).toContain(legacyCache)
+    expect(await current.evaluate(() => caches.keys())).toContain(cachePrefix + versionB)
 
     await page.getByRole('button', { name: 'The study guide' }).click()
     await expect(page.locator('.reload-warning')).toContainText('resets the in-memory study')
@@ -43,17 +45,18 @@ test('legacy recovery, safe activation, explicit reload, and normal refresh load
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Save study PGN' }).click()
     const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('flores-badger-study.pgn')
     expect(parseGame(await readFile((await download.path())!, 'utf8')).moves).toHaveLength(4)
     await page.getByRole('button', { name: 'Reload app', exact: true }).click()
     await expect(page.locator('meta[name="app-build"]')).toHaveAttribute('content', versionB)
     await expect(page.locator('.offline-status')).toContainText('Available offline')
     expect(new URL(page.url()).searchParams.has('refresh')).toBe(true)
-    expect(await current.evaluate(() => caches.keys())).toContain(cachePrefix + server.initialVersion)
+    expect(await current.evaluate(() => caches.keys())).toContain(legacyCache)
     await quiet.close()
 
     await current.goto(server.url)
     await expect(current.locator('.offline-status')).toContainText('Available offline')
-    await expect.poll(() => current.evaluate(() => caches.keys())).not.toContain(cachePrefix + server.initialVersion)
+    await expect.poll(() => current.evaluate(() => caches.keys())).not.toContain(legacyCache)
     server.publish(versionC)
     await current.reload()
     await expect(current.locator('meta[name="app-build"]')).toHaveAttribute('content', versionC)
@@ -67,7 +70,7 @@ test('legacy recovery, safe activation, explicit reload, and normal refresh load
     await page.close()
     await current.reload()
     await expect(current.locator('.offline-status')).toContainText('Available offline')
-    await expect.poll(async () => (await current.evaluate(() => caches.keys())).filter((key) => key.startsWith(cachePrefix))).toEqual([cachePrefix + versionC])
+    await expect.poll(async () => (await current.evaluate(() => caches.keys())).filter((key) => key.startsWith(cachePrefix) || key === legacyCache)).toEqual([cachePrefix + versionC])
     expect(server.requests.some((url) => url.startsWith('/study/index.html?refresh='))).toBe(true)
     expect(server.requests.some((url) => url.startsWith('/study/build.json?refresh='))).toBe(true)
     expect(server.requests.some((url) => url === `/study/sw.js?build=${versionB}`)).toBe(true)
@@ -106,7 +109,9 @@ test('update-check failures stay visible and bot PGN can be saved before a phone
     const downloadPromise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Save bot game PGN' }).click()
     const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe('flores-badger-practice.pgn')
     const savedGame = parseGame(await readFile((await download.path())!, 'utf8'))
+    expect(savedGame.headers.Event).toBe('Flores-Badger practice')
     expect(savedGame.headers.Black).toBe('Oak (Expert)')
     expect(savedGame.positions.at(-1)?.fen).toBe(pausedFen)
     await page.getByRole('button', { name: 'Dark', exact: true }).click()
@@ -137,7 +142,7 @@ test('an incomplete deployment cannot replace the saved app or reload an active 
     await expect(page.locator('.app-update-message')).toContainText('Some app files could not be saved')
     await expect(page.locator('meta[name="app-build"]')).toHaveAttribute('content', server.initialVersion)
     await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', fen!)
-    expect(await page.evaluate(() => caches.keys())).toContain(`badger-flores:${server.url}:${server.initialVersion}`)
+    expect(await page.evaluate(() => caches.keys())).toContain(`flores-badger:${server.url}:${server.initialVersion}`)
     server.failOfflineSave(false)
     await page.getByRole('button', { name: 'Reload app', exact: true }).click()
     await expect(page.locator('meta[name="app-build"]')).toHaveAttribute('content', 'dddddddddddddddd')

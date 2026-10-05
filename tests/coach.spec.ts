@@ -59,8 +59,10 @@ test('real local analysis, legal alternatives, key moments, playback and export 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export study' }).click()
   const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('flores-badger-study.pgn')
   const exported = await readFile((await download.path())!, 'utf8')
   expect(exported).toContain('[%eval')
+  expect(parseGame(exported).headers.Annotator).toBe('Flores-Badger / Stockfish 17.1 lite')
   expect(parseGame(exported).moves.map((move) => move.uci)).toEqual(parseGame(DEMO_PGN).moves.map((move) => move.uci))
   expect(requests.some((url) => url.endsWith('.wasm'))).toBe(true)
   expect(requests.every((url) => new URL(url).hostname === '127.0.0.1')).toBe(true)

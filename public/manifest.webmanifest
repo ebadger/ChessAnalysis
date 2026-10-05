@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Badger-Flores Chess Coach",
-  "short_name": "Badger-Flores",
+  "name": "Flores-Badger Chess Coach",
+  "short_name": "Flores-Badger",
   "description": "A private, offline-capable chess study companion with a local Stockfish engine.",
   "start_url": "./",
   "scope": "./",

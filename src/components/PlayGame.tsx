@@ -106,7 +106,7 @@ export function PlayGame({ game, onAnalyze, onNotice }: {
   }
   const saveGame = () => {
     if (!game.match) return
-    downloadPgn(matchPgn(game.match), 'badger-flores-practice.pgn')
+    downloadPgn(matchPgn(game.match), 'flores-badger-practice.pgn')
     onNotice('Your bot game has been saved as a PGN. You can import it again any time.')
   }
   const player = (pieceColor: Color) => {
@@ -121,7 +121,7 @@ export function PlayGame({ game, onAnalyze, onNotice }: {
 
   return <>
     {!game.match ? <section className="play-welcome panel" id="play-board">
-      <div className="play-welcome-copy"><span className="eyebrow">A FRIENDLY RIVAL. A FRESH BEGINNING.</span><h2>A little practice.<br />A lot of possibility.</h2><p>Meet our garden of chess companions. Find a comfortable challenge, play at your own pace, then let Badger-Flores help you learn from the game.</p><span className="play-welcome-note"><BookOpen size={15} /> Already have a game? PGN import is always at the top.</span></div>
+      <div className="play-welcome-copy"><span className="eyebrow">A FRIENDLY RIVAL. A FRESH BEGINNING.</span><h2>A little practice.<br />A lot of possibility.</h2><p>Meet our garden of chess companions. Find a comfortable challenge, play at your own pace, then let Flores-Badger help you learn from the game.</p><span className="play-welcome-note"><BookOpen size={15} /> Already have a game? PGN import is always at the top.</span></div>
       <BotSetup level={level} color={color} onLevel={setLevel} onColor={setColor} onStart={startGame} />
     </section> : <div className="play-workspace">
       <section className="play-board-column" id="play-board" aria-label="Play against a local bot">
@@ -147,7 +147,7 @@ export function PlayGame({ game, onAnalyze, onNotice }: {
       </section>
       <aside className="play-sidebar">
         <section className="play-coach-card panel">
-          <div className="play-coach-heading"><strong>Badger-Flores</strong><small>In your corner, every move.</small></div>
+          <div className="play-coach-heading"><strong>Flores-Badger</strong><small>In your corner, every move.</small></div>
           <h2>{game.finished ? "Played. Now let's grow." : game.chess.isCheck() ? 'First, look after your king.' : 'A good game starts with curiosity.'}</h2>
           <p>{game.finished ? 'Which move changed the story? Open your analysis to find the turning points, missed tactics, and better paths. You can also take back a move and try another idea.' : game.chess.isCheck() ? 'You must answer the check: move the king, capture the checking piece, or block the attack. The highlighted squares show legal choices.' : 'Before you move, look for checks, captures, and threats for both sides. No clock is ticking, and a takeback is just another chance to learn.'}</p>
           <div className="play-coach-footnote"><Flower2 size={13} /> Five skill levels. One patient companion.</div>

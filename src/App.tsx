@@ -236,7 +236,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
   }
 
   const exportGame = () => {
-    downloadPgn(exportAnnotatedPgn(game, analyses), 'badger-flores-study.pgn')
+    downloadPgn(exportAnnotatedPgn(game, analyses), 'flores-badger-study.pgn')
     setNotice('Your annotated PGN is ready to keep and revisit.')
   }
   const exportBotGame = () => {
@@ -244,7 +244,7 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
       setNotice('There are no bot moves to save yet.')
       return
     }
-    downloadPgn(matchPgn(botGame.match), 'badger-flores-practice.pgn')
+    downloadPgn(matchPgn(botGame.match), 'flores-badger-practice.pgn')
     setNotice('Your bot game is ready to keep before reloading.')
   }
 
@@ -329,8 +329,8 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
     <div className={`app-shell${phoneReview ? ' phone-review-app' : ''}`}>
       <a className="skip-link" href={view === 'review' ? '#study-board' : '#play-board'}>Skip to the chessboard</a>
       <header className="site-header">
-        <a className="brand" href="./" aria-label="Badger-Flores home" onClick={(event) => { event.preventDefault(); changeView('review') }}>
-          <span><strong>Badger<span className="brand-hyphen">-</span>Flores<Flower2 size={18} /></strong><small>A little better, every move.</small></span>
+        <a className="brand" href="./" aria-label="Flores-Badger home" onClick={(event) => { event.preventDefault(); changeView('review') }}>
+          <span><strong>Flores<span className="brand-hyphen">-</span>Badger<Flower2 size={18} /></strong><small>A little better, every move.</small></span>
         </a>
         <nav className="header-actions" aria-label="Main navigation">
           <span className="privacy-label" title={offline.message}>{offline.status === 'ready' ? <CloudOff size={15} /> : <ShieldCheck size={15} />}{offline.status === 'ready' ? 'Works offline' : 'Private by nature'}</span>

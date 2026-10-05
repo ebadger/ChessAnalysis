@@ -21,11 +21,11 @@ export function Coach({
   const best = analysis?.best
   const loss = analysis ? evaluationPointLoss(analysis) : null
   return (
-    <aside className="coach-column" aria-label="Badger-Flores coaching">
+    <aside className="coach-column" aria-label="Flores-Badger coaching">
       <section className="coach-card">
         <div className="coach-intro"><span className="eyebrow"><Flower2 size={13} /> A LITTLE WISDOM, A LITTLE WILDFLOWER</span></div>
         <div className="coach-heading">
-          <div className="coach-name">Badger-Flores <Flower2 size={14} /></div>
+          <div className="coach-name">Flores-Badger <Flower2 size={14} /></div>
           <span className="coach-role">Your companion at the board</span>
         </div>
         <div className="coach-feedback">

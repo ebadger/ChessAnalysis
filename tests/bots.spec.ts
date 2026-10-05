@@ -33,8 +33,10 @@ test('all five bot levels make legal replies on a phone, with touch targets and 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Save game PGN' }).tap()
   const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('flores-badger-practice.pgn')
   const pgn = await readFile((await download.path())!, 'utf8')
   const exported = parseGame(pgn)
+  expect(exported.headers.Event).toBe('Flores-Badger practice')
   expect(exported.headers.Black).toBe('Oak (Expert)')
   expect(exported.headers.BotSkill).toBe('20')
   expect(exported.positions.at(-1)?.fen).toBe(await page.locator('.chessboard').getAttribute('data-fen'))

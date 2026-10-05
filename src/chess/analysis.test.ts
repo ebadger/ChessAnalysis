@@ -104,7 +104,7 @@ describe('independent move grading', () => {
     expect(pgn).toContain('Evaluation cost: 2.0 pawn units')
     expect(pgn).toMatch(/Key\s+moment:/)
     expect(parseGame(pgn).moves.map((move) => move.uci)).toEqual(game.moves.map((move) => move.uci))
-    expect(parseGame(pgn).headers.Annotator).toContain('Badger-Flores')
+    expect(parseGame(pgn).headers.Annotator).toContain('Flores-Badger')
   })
 
   it('keeps study accuracy bounded and unreviewed players unscored', () => {

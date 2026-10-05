@@ -7,12 +7,14 @@ export interface ThemeSettings {
   warning: string | null
 }
 
-export const THEME_STORAGE_KEY = 'badger-flores-theme'
+export const THEME_STORAGE_KEY = 'flores-badger-theme'
+// Keep existing device preferences until a choice is saved under the new name.
+const LEGACY_THEME_STORAGE_KEY = 'badger-flores-theme'
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
 export function readThemePreference(): ThemeSettings {
   try {
-    const saved = window.localStorage.getItem(THEME_STORAGE_KEY)
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
     if (saved === null || saved === 'system') return { preference: 'system', warning: null }
     if (saved === 'light' || saved === 'dark') return { preference: saved, warning: null }
     return { preference: 'system', warning: 'The saved theme preference was not recognized. Using your device theme instead.' }
@@ -48,7 +50,7 @@ export function useTheme(initial: ThemeSettings) {
     const media = window.matchMedia(DARK_QUERY)
     const updateSystem = () => setSystemDark(media.matches)
     const updateSaved = (event: StorageEvent) => {
-      if (event.key !== THEME_STORAGE_KEY && event.key !== null) return
+      if (event.key !== THEME_STORAGE_KEY && event.key !== LEGACY_THEME_STORAGE_KEY && event.key !== null) return
       const settings = readThemePreference()
       setPreferenceState(settings.preference)
       setWarning(settings.warning)

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyTheme, initializeTheme, readThemePreference, resolveTheme } from './useTheme'
+import { applyTheme, initializeTheme, readThemePreference, resolveTheme, THEME_STORAGE_KEY } from './useTheme'
 
-const getItem = vi.fn<() => string | null>()
+const getItem = vi.fn<(key: string) => string | null>()
 const meta = { setAttribute: vi.fn() }
 const root = { dataset: { theme: '' }, style: { colorScheme: '' } }
 
@@ -28,6 +28,17 @@ describe('appearance preference', () => {
     expect(meta.setAttribute).toHaveBeenCalledWith('content', '#f8f7f3')
     applyTheme('dark')
     expect(meta.setAttribute).toHaveBeenCalledWith('content', '#181b22')
+  })
+  it.each(['system', 'light', 'dark'] as const)('keeps an existing %s preference saved before the rename', (preference) => {
+    getItem.mockImplementation((key) => key === 'badger-flores-theme' ? preference : null)
+    expect(readThemePreference()).toEqual({ preference, warning: null })
+    expect(getItem).toHaveBeenCalledWith(THEME_STORAGE_KEY)
+    expect(getItem).toHaveBeenCalledWith('badger-flores-theme')
+  })
+  it('prefers a new setting over an older tab writing the old preference', () => {
+    getItem.mockImplementation((key) => key === THEME_STORAGE_KEY ? 'light' : 'dark')
+    expect(readThemePreference()).toEqual({ preference: 'light', warning: null })
+    expect(getItem).not.toHaveBeenCalledWith('badger-flores-theme')
   })
   it('surfaces invalid and inaccessible storage without breaking the theme control', () => {
     getItem.mockReturnValue('neon')

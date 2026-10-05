@@ -1,4 +1,4 @@
-# Badger-Flores
+# Flores-Badger
 
 A private, browser-only chess study companion. Paste a PGN, explore a visual board, and understand the moments that mattered with step-by-step coaching.
 
@@ -44,6 +44,8 @@ If an older installed copy still keeps showing the old page, save your game firs
 
 Each production build has a content-derived identifier in its HTML, `build.json`, and worker. HTML/version requests use cache-busting query parameters, bundled JS/CSS retain hashed filenames, and worker registration uses a versioned URL with browser-cache bypassing. The new worker activates only after its complete matching offline copy has been saved; it does not navigate existing tabs. Older assets remain cached while an older or unresponsive tab may still need them and are pruned conservatively once all scoped clients use the current version. Deploy the complete output together, including `build.json`, `refresh.html`, and `sw.js`.
 
+Updating to the Flores-Badger name preserves existing device theme preferences and offline assets needed by older open tabs. New theme choices and offline copies use the renamed app identifiers. The site address is unchanged.
+
 ## Self-contained and offline
 
 **Stockfish runs on the student's device.** Every runtime dependency, chess piece, icon, font choice, and engine asset is local or bundled. There are no remote analysis/model calls, CDNs, telemetry endpoints, or third-party font requests. The one opt-in network feature is public game lookup at `https://api.chess.com`. The production Content Security Policy keeps scripts, workers, fonts, and other resources local; connections allow only the app's origin and that public API.
@@ -60,7 +62,7 @@ When offline, navigation uses the saved page immediately. If an online navigatio
 
 ## The study experience
 
-- A flower-themed study space honoring the Badger-Flores family name, with text-based coaching and no cartoon character.
+- A flower-themed study space honoring the Flores-Badger family name, with text-based coaching and no cartoon character.
 - System-aware light/dark themes, with a moon/sun toggle beside the activity tabs. Board pieces, arrows, graphs, coaching, bot games, and dialogs all adapt. The study guide offers **Follow device**, **Light**, and **Dark**; a manual choice is remembered on the device and works offline. Blocked preference storage is reported without disabling the toggle.
 - Optional Chess.com username lookup: browse every available monthly archive, page through its public completed games, and select one for local analysis. No account login is required.
 - Five leveled local bots, playable as White, Black, or a randomly assigned color. Phone-friendly tap-to-move controls show legal destinations, with explicit queen/rook/bishop/knight promotion choices. Take back a turn, resign, save the PGN, or send a completed/in-progress game straight to analysis.

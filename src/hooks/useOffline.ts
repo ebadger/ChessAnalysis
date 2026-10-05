@@ -83,7 +83,7 @@ function ownWorker(worker: ServiceWorker, scope: URL): boolean {
 async function ensureOfflineVersion(scope: URL, version: string, signal: AbortSignal): Promise<ServiceWorker> {
   const existing = await navigator.serviceWorker.getRegistration(scope.href)
   if (existing?.scope === scope.href && existing.active) {
-    if (!ownWorker(existing.active, scope)) throw new Error('A different offline app controls this address. Use a separate deployment path for Badger-Flores.')
+    if (!ownWorker(existing.active, scope)) throw new Error('A different offline app controls this address. Use a separate deployment path for Flores-Badger.')
     const saved = await checkOffline(existing.active, 'OFFLINE_STATUS', signal)
     if (saved.version === version) {
       if (!saved.ready) {
