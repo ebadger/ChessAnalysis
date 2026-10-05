@@ -1,6 +1,6 @@
 # Badger-Flores
 
-A private, browser-only chess study companion. Paste a PGN, explore a visual board, and let a flower-wearing badger help you understand the moments that mattered.
+A private, browser-only chess study companion. Paste a PGN, explore a visual board, and understand the moments that mattered with step-by-step coaching.
 
 ## Run locally
 
@@ -46,7 +46,7 @@ Each production build has a content-derived identifier in its HTML, `build.json`
 
 ## Self-contained and offline
 
-**Stockfish runs on the student's device.** Every runtime dependency, chess piece, icon, font choice, coach illustration, and engine asset is local or bundled. There are no remote analysis/model calls, CDNs, telemetry endpoints, or third-party font requests. The one opt-in network feature is public game lookup at `https://api.chess.com`. The production Content Security Policy keeps scripts, workers, fonts, and other resources local; connections allow only the app's origin and that public API.
+**Stockfish runs on the student's device.** Every runtime dependency, chess piece, icon, font choice, and engine asset is local or bundled. There are no remote analysis/model calls, CDNs, telemetry endpoints, or third-party font requests. The one opt-in network feature is public game lookup at `https://api.chess.com`. The production Content Security Policy keeps scripts, workers, fonts, and other resources local; connections allow only the app's origin and that public API.
 
 The production build generates a versioned service worker that precaches the complete app, including Stockfish's JavaScript, WebAssembly, and license. Wait for **Available offline** before disconnecting. After that you can reload the page, import a completely new game, run fresh Quick or Deep analysis, explore lines, and export a study without an internet connection. Offline-save failures are visible and retryable.
 
@@ -60,7 +60,7 @@ When offline, navigation uses the saved page immediately. If an online navigatio
 
 ## The study experience
 
-- An original animated Badger-Flores coach, honoring the family name with a badger, a daisy, a lilac scarf, and a little garden. The SVG artwork is created for this project; reduced-motion preferences are respected.
+- A flower-themed study space honoring the Badger-Flores family name, with text-based coaching and no cartoon character.
 - System-aware light/dark themes, with a moon/sun toggle beside the activity tabs. Board pieces, arrows, graphs, coaching, bot games, and dialogs all adapt. The study guide offers **Follow device**, **Light**, and **Dark**; a manual choice is remembered on the device and works offline. Blocked preference storage is reported without disabling the toggle.
 - Optional Chess.com username lookup: browse every available monthly archive, page through its public completed games, and select one for local analysis. No account login is required.
 - Five leveled local bots, playable as White, Black, or a randomly assigned color. Phone-friendly tap-to-move controls show legal destinations, with explicit queen/rook/bishop/knight promotion choices. Take back a turn, resign, save the PGN, or send a completed/in-progress game straight to analysis.
@@ -176,4 +176,4 @@ If Playwright reports a missing browser, run `npx playwright install chromium`, 
 - [Stockfish.js v17.1.0 source and build scripts](https://github.com/nmrugg/stockfish.js/tree/v17.1.0) and its [exact source archive](https://github.com/nmrugg/stockfish.js/archive/refs/tags/v17.1.0.tar.gz).
 - Stockfish.js is copyright Chess.com, LLC and the Stockfish contributors, distributed under **GNU GPL v3**. The unmodified engine's license is shipped at `engine/COPYING.txt`, and the in-app study guide links to its corresponding source. Keep these notices and source access when redistributing the engine.
 - [Chess.com's public move-classification descriptions](https://support.chess.com/en/articles/8572705-how-are-moves-classified-what-is-a-blunder-or-brilliant-etc) informed the familiar vocabulary. [Chessigma](https://www.chessigma.com/) is an additional product reference. This app is independent and not affiliated with either service.
-- UI and coach artwork are original; no commercial service's artwork, commentary, or proprietary analysis algorithm is copied.
+- The UI and chess-piece artwork are original; no commercial service's artwork, commentary, or proprietary analysis algorithm is copied.

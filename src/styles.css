@@ -58,8 +58,6 @@ h1, h2, h3, p { margin: 0; }
 
 .site-header { height: 83px; border-bottom: 1px solid #eae6e7; display: flex; align-items: center; justify-content: space-between; padding: 0 max(32px, calc((100vw - 1216px) / 2)); background: #fffefa; gap: 24px; }
 .brand { display: flex; align-items: center; gap: 7px; text-decoration: none; color: #41344a; flex-shrink: 0; }
-.brand-character { display: block; width: 59px; height: 52px; overflow: hidden; }
-.brand-character .badger-art { width: 73px; height: 58px; max-width: none; transform: translate(-7px, -4px); }
 .brand strong { display: flex; align-items: center; gap: 0; font-family: Georgia, "Times New Roman", serif; font-size: 25px; font-weight: 600; letter-spacing: -.7px; }
 .brand strong > svg { color: #ac8db9; margin-left: 5px; margin-top: -10px; }
 .brand-hyphen { color: #9f88ac; padding: 0 1px; }
@@ -325,18 +323,11 @@ button.board-square:focus-visible { outline: 3px solid #775287; outline-offset: 
 .coach-card { border: 1px solid #e6dfea; border-radius: 12px; background: #f5f0f7; overflow: hidden; }
 .coach-intro { text-align: center; padding: 15px 8px 0; }
 .coach-intro .eyebrow { justify-content: center; font-size: 8px; letter-spacing: .65px; color: #9876aa; }
-.coach-portrait { position: relative; display: flex; flex-direction: column; align-items: center; padding: 2px 0 16px; }
-.coach-portrait .badger-art { width: 203px; height: 155px; position: relative; z-index: 1; }
-.portrait-halo { position: absolute; width: 145px; height: 145px; top: 7px; left: 50%; transform: translateX(-50%); background: #eae2ef; border-radius: 50%; }
-.portrait-halo::before { content: ""; position: absolute; width: 165px; height: 165px; top: -10px; left: -10px; border: 1px dashed #e6ddea; border-radius: 50%; opacity: .8; }
-.portrait-spark { color: #c9b1d5; position: absolute; font-family: Georgia, serif; }
-.spark-one { left: 49px; top: 56px; font-size: 17px; transform: rotate(15deg); }
-.spark-two { right: 44px; top: 102px; font-size: 13px; transform: rotate(-15deg); }
-.coach-name { color: #775587; font-size: 13px; display: flex; align-items: center; gap: 5px; font-weight: 650; margin-top: -1px; z-index: 1; }
+.coach-heading { display: flex; flex-direction: column; align-items: center; padding: 12px 16px 16px; }
+.coach-name { color: #775587; font-size: 13px; display: flex; align-items: center; gap: 5px; font-weight: 650; }
 .coach-name svg { color: #b19bbd; }
 .coach-role { font-size: 10px; color: #9576a5; margin-top: 3px; }
 .coach-feedback { padding: 18px 19px 17px; border-top: 1px solid #e6dfea; background: #fdfbfe; position: relative; }
-.coach-feedback::before { content: ""; position: absolute; top: -7px; left: calc(50% - 7px); width: 12px; height: 12px; background: #fdfbfe; border-top: 1px solid #e6dfea; border-left: 1px solid #e6dfea; transform: rotate(45deg); }
 .coach-move-label { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #93719f; margin-bottom: 10px; }
 .coach-move-label strong { font-weight: 700; margin-left: 2px; }
 .coach-move-label > span:last-child { font-size: 11px; }
@@ -530,12 +521,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .library-error { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
 
-.badger-bob { animation: badger-breathe 5s ease-in-out infinite; transform-origin: 120px 160px; }
-.badger-eyes { animation: badger-blink 6s linear infinite; transform-origin: 122px 77px; }
-.badger-wave { animation: badger-wave 7s ease-in-out infinite; transform-origin: 162px 127px; }
-.floating-petals { animation: petals-float 5s ease-in-out infinite; }
-.badger-garden { animation: garden-sway 6s ease-in-out infinite; transform-origin: 120px 173px; }
-.badger-small .badger-bob, .badger-small .badger-wave, .badger-small .badger-garden, .badger-small .floating-petals { animation: none; }
 .workspace-mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 22px 0 18px; }
 .workspace-modes { display: flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid #e5dce9; background: #ede7f1; border-radius: 10px; }
 .workspace-modes button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 9px 17px; border-radius: 7px; font-size: 12px; font-weight: 600; color: #896f98; white-space: nowrap; }
@@ -548,7 +533,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 .play-page-heading > p { color: #87778e; font-size: 13px; margin-top: 9px; line-height: 1.6; }
 .play-welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 990px; margin: 0 auto; overflow: hidden; border-color: #e3dbe9; }
 .play-welcome-copy { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px 34px; background: #f0eaf4; }
-.play-welcome-copy .badger-art { width: 228px; height: 181px; margin-bottom: 19px; }
 .play-welcome-copy h2 { font-family: Georgia, serif; font-size: 33px; line-height: 1.16; font-weight: 400; color: #6b4c7e; margin-top: 13px; letter-spacing: -.6px; }
 .play-welcome-copy > p { font-size: 13px; line-height: 1.9; color: #887096; margin-top: 16px; max-width: 335px; }
 .play-welcome-note { display: flex; align-items: center; gap: 6px; color: #9279a0; font-size: 10px; line-height: 1.6; margin-top: 25px; }
@@ -610,10 +594,9 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 .bot-error > button { margin-top: 9px; }
 .play-sidebar { display: flex; flex-direction: column; gap: 17px; min-width: 0; }
 .play-coach-card { padding: 21px; background: #f7f2fa; border-color: #e6dbed; }
-.play-coach-portrait { display: flex; align-items: center; gap: 9px; border-bottom: 1px solid #e7ddec; padding-bottom: 15px; margin-bottom: 18px; }
-.play-coach-portrait .badger-art { width: 103px; height: 85px; flex-shrink: 0; }
-.play-coach-portrait strong { display: block; color: #826090; font-size: 13px; }
-.play-coach-portrait small { display: block; color: #9b7eaa; font-size: 9px; margin-top: 4px; line-height: 1.5; }
+.play-coach-heading { border-bottom: 1px solid #e7ddec; padding-bottom: 15px; margin-bottom: 18px; }
+.play-coach-heading strong { display: block; color: #826090; font-size: 13px; }
+.play-coach-heading small { display: block; color: #9b7eaa; font-size: 9px; margin-top: 4px; line-height: 1.5; }
 .play-coach-card h2 { font-family: Georgia, serif; font-size: 25px; line-height: 1.22; letter-spacing: -.4px; font-weight: 400; color: #795589; }
 .play-coach-card > p { color: #8b719a; font-size: 12px; line-height: 1.9; margin-top: 12px; }
 .play-coach-footnote { display: flex; align-items: center; gap: 6px; font-size: 9px; color: #a58bb1; border-top: 1px solid #e7ddec; margin-top: 17px; padding-top: 13px; }
@@ -637,11 +620,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
 .promotion-options .chess-piece { height: 48px; width: 48px; }
 .promotion-options span { text-transform: capitalize; font-size: 11px; color: #8c6c9b; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes badger-breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
-@keyframes badger-blink { 0%, 43%, 47%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.08); } }
-@keyframes badger-wave { 0%, 65%, 100% { transform: rotate(0); } 72%, 84% { transform: rotate(-9deg); } 78%, 90% { transform: rotate(4deg); } }
-@keyframes petals-float { 0%, 100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(-6px); opacity: 1; } }
-@keyframes garden-sway { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
 
 @media (min-width: 1440px) {
   .study-workspace { grid-template-columns: 232px minmax(0, 1fr) 336px; gap: 24px; }
@@ -674,9 +652,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .coach-column { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .coach-card { grid-row: span 3; }
   .coach-intro .eyebrow { font-size: 8px; }
-  .coach-portrait .badger-art { height: 178px; width: 224px; }
-  .portrait-halo { width: 165px; height: 165px; }
-  .portrait-halo::before { width: 185px; height: 185px; }
   .coach-feedback h2 { font-size: 27px; }
   .coach-feedback > p { font-size: 12px; }
   .coach-column > .takeaway-card { align-self: start; }
@@ -690,16 +665,12 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .play-workspace { grid-template-columns: minmax(0, 1fr) 265px; gap: 20px; }
   .play-welcome-copy { padding: 25px; }
   .play-welcome-copy h2 { font-size: 29px; }
-  .play-welcome-copy .badger-art { width: 190px; height: 153px; }
   .bot-setup { padding: 22px; }
   .difficulty-dots { gap: 2px; }
-  .play-coach-portrait { flex-direction: column; text-align: center; }
   .play-actions { flex-wrap: wrap; }
 }
 @media (max-width: 700px) {
   .site-header { padding: 0 18px; height: 73px; gap: 10px; }
-  .brand-character { width: 46px; height: 45px; }
-  .brand-character .badger-art { width: 62px; height: 50px; transform: translate(-8px, -2px); }
   .brand strong { font-size: 21px; }
   .brand small { font-size: 8px; }
   .brand strong > svg { width: 14px; margin-left: 3px; }
@@ -738,9 +709,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .next-critical-button { font-size: 10px; gap: 6px; padding-left: 7px; }
   .critical-controls > .icon-button { width: 27px; height: 38px; }
   .coach-column { display: flex; gap: 13px; }
-  .coach-portrait .badger-art { width: 211px; height: 165px; }
-  .portrait-halo { width: 152px; height: 152px; }
-  .portrait-halo::before { width: 172px; height: 172px; }
   .coach-intro .eyebrow { font-size: 8px; }
   .coach-feedback { padding: 22px; }
   .coach-feedback h2 { font-size: 28px; }
@@ -822,12 +790,9 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .resign-button { padding: 9px 5px; font-size: 10px; gap: 4px; }
   .save-bot-pgn { width: 35px; }
   .play-memory-note { font-size: 10px; }
-  .play-coach-portrait { flex-direction: row; text-align: left; }
-  .play-coach-portrait .badger-art { width: 110px; height: 87px; }
   .play-coach-card > p { font-size: 13px; }
   .play-welcome { grid-template-columns: minmax(0, 1fr); }
   .play-welcome-copy { padding: 17px 20px 20px; }
-  .play-welcome-copy .badger-art { width: 114px; height: 86px; margin-bottom: 4px; }
   .play-welcome-copy h2 { font-size: 25px; margin-top: 7px; }
   .play-welcome-copy h2 > br { display: none; }
   .play-welcome-copy > p, .play-welcome-note { display: none; }
@@ -850,8 +815,6 @@ kbd { display: inline-block; font-family: inherit; font-size: 10px; padding: 0 5
   .site-header { padding: 0 12px; }
   .brand { gap: 3px; }
   .brand strong { font-size: 20px; }
-  .brand-character { width: 37px; }
-  .brand-character .badger-art { transform: translate(-12px, -2px); }
   .brand strong > svg { display: none; }
   .page-shell { padding: 0 12px; }
   .page-heading h1 { font-size: 27px; }
@@ -887,8 +850,6 @@ body:has(.phone-review-app) { overflow: hidden; }
 .phone-review-app .brand { gap: 2px; }
 .phone-review-app .brand strong { font-size: 18px; letter-spacing: -.5px; }
 .phone-review-app .brand small, .phone-review-app .brand strong > svg { display: none; }
-.phone-review-app .brand-character { width: 31px; height: 33px; }
-.phone-review-app .brand-character .badger-art { width: 44px; height: 36px; transform: translate(-6px, -2px); }
 .phone-review-app .header-actions { gap: 4px; }
 .phone-review-app .privacy-label { display: none; }
 .phone-review-app .header-guide { display: flex; justify-content: center; width: 28px; height: 30px; order: 2; padding: 0; border-radius: 6px; }
@@ -962,7 +923,7 @@ body:has(.phone-review-app) { overflow: hidden; }
 .phone-panel-scroll .key-replay-card > p { display: none; }
 .phone-panel-scroll .key-replay-progress { margin: 8px 0; }
 .phone-panel-scroll .key-replay-actions > button { min-height: 30px; }
-.phone-panel-scroll .coach-intro, .phone-panel-scroll .coach-portrait, .phone-panel-scroll .coach-feedback::before, .phone-panel-scroll .coach-feedback > h2 { display: none; }
+.phone-panel-scroll .coach-intro, .phone-panel-scroll .coach-heading, .phone-panel-scroll .coach-feedback > h2 { display: none; }
 .phone-panel-scroll .coach-card { order: 0; border-radius: 7px; }
 .phone-panel-scroll .coach-feedback { padding: 10px; border: 0; }
 .phone-panel-scroll .coach-move-label { margin-bottom: 6px; font-size: 11px; }

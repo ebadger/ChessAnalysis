@@ -124,7 +124,7 @@ test('rotating a phone and returning to desktop retain the same analysis and alt
   await page.setViewportSize({ width: 1280, height: 900 })
   await expect(page.locator('.phone-review-app')).toHaveCount(0)
   await expect(page.locator('.study-workspace')).toBeVisible()
-  await expect(page.locator('.coach-portrait')).toBeVisible()
+  await expect(page.locator('.coach-heading')).toBeVisible()
   await expect(page.locator('.move-cell')).toHaveCount(33)
   await expect(page.locator('.chessboard')).toHaveAttribute('data-fen', fen!)
 })

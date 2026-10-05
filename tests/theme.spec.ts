@@ -34,6 +34,12 @@ async function noBrightPanels(page: Page) {
   expect(panels).toEqual([])
 }
 
+async function noBadgerCharacter(page: Page) {
+  await expect(page.locator('.badger-art, .brand-character, .coach-portrait, .play-coach-portrait, .portrait-halo, .portrait-spark')).toHaveCount(0)
+  await expect(page.getByRole('img', { name: /badger/i, includeHidden: true })).toHaveCount(0)
+  await expect(page.locator('.brand')).toBeVisible()
+}
+
 test('theme follows the device, remembers a manual choice, and can return to automatic', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('./')
@@ -56,6 +62,11 @@ for (const viewport of [{ width: 1440, height: 1100 }, { width: 320, height: 568
     await page.emulateMedia({ colorScheme: 'dark' })
     await page.goto('./')
     await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100', { timeout: 60000 })
+    await noBadgerCharacter(page)
+    if (viewport.width > 700) {
+      expect((await page.locator('.coach-heading').boundingBox())!.height).toBeLessThan(80)
+      await expect(page.locator('.coach-name')).toHaveText('Badger-Flores')
+    } else await expect(page.locator('.coach-heading')).toBeHidden()
     await checkContrast(page, '.coach-feedback > p')
     await checkContrast(page, '.best-alternative .alternative-main > strong')
     await noBrightPanels(page)
@@ -68,12 +79,22 @@ for (const viewport of [{ width: 1440, height: 1100 }, { width: 320, height: 568
     await checkContrast(page, '#pgn-input')
     await noBrightPanels(page)
     await page.getByRole('button', { name: 'Close import dialog' }).click()
+    await page.getByRole('button', { name: viewport.width === 320 ? 'About the coach & analysis' : 'The study guide' }).click()
+    await expect(page.locator('.guide-content')).toContainText('The Badger-Flores name and flower theme honor the family')
+    await expect(page.locator('.guide-content')).not.toContainText('curiosity of a badger')
+    await noBadgerCharacter(page)
+    await page.getByRole('button', { name: 'Close study guide' }).click()
     await page.getByRole('tab', { name: 'Play a bot' }).click()
+    await noBadgerCharacter(page)
     await noBrightPanels(page)
     await checkContrast(page, '.play-welcome-copy > h2')
+    await page.screenshot({ path: testInfo.outputPath(`bot-setup-${viewport.width}.png`), fullPage: true })
     await page.getByRole('button', { name: 'Start game', exact: true }).click()
+    await noBadgerCharacter(page)
+    expect((await page.locator('.play-coach-heading').boundingBox())!.height).toBeLessThan(70)
     await checkContrast(page, '.play-coach-card > p')
     await noBrightPanels(page)
+    await page.screenshot({ path: testInfo.outputPath(`bot-game-${viewport.width}.png`), fullPage: true })
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width)
   })
 }

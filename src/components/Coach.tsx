@@ -2,7 +2,6 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, CircleHelp, Flower2, Lightbul
 import { CLASSIFICATIONS } from '../chess/analysis'
 import { colorName, evaluationPointLoss, formatEvaluation, moveLabel } from '../chess/game'
 import type { EngineLine, GameMove, MoveAnalysis, Tactic } from '../chess/types'
-import { Badger } from './Badger'
 import { GradeBadge } from './MoveList'
 
 export function Coach({
@@ -25,10 +24,7 @@ export function Coach({
     <aside className="coach-column" aria-label="Badger-Flores coaching">
       <section className="coach-card">
         <div className="coach-intro"><span className="eyebrow"><Flower2 size={13} /> A LITTLE WISDOM, A LITTLE WILDFLOWER</span></div>
-        <div className="coach-portrait">
-          <div className="portrait-halo" />
-          <span className="portrait-spark spark-one">+</span><span className="portrait-spark spark-two">+</span>
-          <Badger />
+        <div className="coach-heading">
           <div className="coach-name">Badger-Flores <Flower2 size={14} /></div>
           <span className="coach-role">Your companion at the board</span>
         </div>

@@ -14,7 +14,6 @@ import { replayPieceMotions, reviewPositionIndex } from './chess/navigation'
 import { compareSelectedMove } from './chess/comparison'
 import { matchPgn } from './chess/bots'
 import type { AnalysisMode, BoardArrow, EngineLine, ParsedGame, Tactic, Variation } from './chess/types'
-import { Badger } from './components/Badger'
 import { Chessboard, ChessPiece } from './components/Chessboard'
 import { Coach } from './components/Coach'
 import { CategoryDialog, GuideDialog, ImportDialog } from './components/Dialogs'
@@ -331,7 +330,6 @@ function App({ initialTheme }: { initialTheme: ThemeSettings }) {
       <a className="skip-link" href={view === 'review' ? '#study-board' : '#play-board'}>Skip to the chessboard</a>
       <header className="site-header">
         <a className="brand" href="./" aria-label="Badger-Flores home" onClick={(event) => { event.preventDefault(); changeView('review') }}>
-          <span className="brand-character"><Badger small /></span>
           <span><strong>Badger<span className="brand-hyphen">-</span>Flores<Flower2 size={18} /></strong><small>A little better, every move.</small></span>
         </a>
         <nav className="header-actions" aria-label="Main navigation">
